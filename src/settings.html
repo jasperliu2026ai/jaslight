@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#0f1117; color:#e2e8f0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; overflow:hidden; height:100%; }
+
+  .titlebar {
+    height:44px; display:flex; align-items:center; padding:0 16px; gap:8px;
+    -webkit-app-region:drag; border-bottom:1px solid rgba(255,255,255,0.07); flex-shrink:0;
+  }
+  .titlebar-title { font-size:13px; font-weight:600; color:#94a3b8; }
+  .lang-btn, .close-btn {
+    width:auto; min-width:20px; height:22px; padding:0 8px; border-radius:6px;
+    background:rgba(255,255,255,0.08); border:none; color:#94a3b8; font-size:11px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    -webkit-app-region:no-drag;
+  }
+  .close-btn { margin-left:6px; width:22px; padding:0; border-radius:50%; font-size:13px; }
+  .lang-btn { margin-left:auto; }
+  .lang-btn:hover { background:rgba(255,255,255,0.16); color:#fff; }
+  .close-btn:hover { background:#ef4444; color:#fff; }
+
+  .tabs { display:flex; gap:3px; padding:10px 14px 0; flex-shrink:0; }
+  .tab {
+    padding:6px 13px; border-radius:8px 8px 0 0; cursor:pointer;
+    font-size:12px; color:#94a3b8; background:transparent; border:none;
+  }
+  .tab.active { background:rgba(255,255,255,0.07); color:#e2e8f0; font-weight:600; }
+
+  .content { padding:16px; height:calc(100% - 44px - 36px); overflow-y:auto; }
+  .content::-webkit-scrollbar { width:5px; }
+  .content::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:3px; }
+  .pane { display:none; flex-direction:column; gap:16px; }
+  .pane.active { display:flex; }
+
+  .section { display:flex; flex-direction:column; gap:9px; }
+  .section-title { font-size:11px; font-weight:600; color:#64748b; letter-spacing:.6px; text-transform:uppercase; }
+  .hint { font-size:11px; color:#64748b; line-height:1.6; }
+  .hint code {
+    background:rgba(255,255,255,0.09); padding:1px 5px; border-radius:4px;
+    font-family:ui-monospace,Menlo,Consolas,monospace; font-size:10px; color:#93c5fd;
+  }
+
+  .row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 13px; background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.07); border-radius:10px;
+  }
+  .row-label { font-size:13px; color:#cbd5e1; }
+  .row-sub   { font-size:11px; color:#64748b; margin-top:2px; line-height:1.4; }
+
+  .toggle { position:relative; width:40px; height:22px; flex-shrink:0; }
+  .toggle input { opacity:0; width:0; height:0; }
+  .slider { position:absolute; inset:0; border-radius:11px; cursor:pointer; background:#374151; transition:.2s; }
+  .slider::before { content:''; position:absolute; width:18px; height:18px; left:2px; top:2px; border-radius:50%; background:#fff; transition:.2s; }
+  .toggle input:checked + .slider { background:#22c55e; }
+  .toggle input:checked + .slider::before { transform:translateX(18px); }
+
+  input[type=range] { -webkit-appearance:none; width:130px; height:4px; background:rgba(255,255,255,0.15); border-radius:2px; outline:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:#22c55e; cursor:pointer; }
+
+  select, input[type=text], input[type=number] {
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+    border-radius:7px; color:#e2e8f0; font-size:12px; padding:5px 8px; outline:none;
+  }
+  input[type=number] { width:60px; text-align:center; }
+  input[type=text] { width:100%; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; }
+  input[type=text]:focus, select:focus { border-color:rgba(59,130,246,0.6); }
+
+  .btn {
+    padding:6px 12px; border-radius:7px; cursor:pointer; font-size:11px;
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1;
+  }
+  .btn:hover { background:rgba(255,255,255,0.16); color:#fff; }
+  .btn.primary { background:rgba(34,197,94,0.2); border-color:rgba(34,197,94,0.45); color:#86efac; }
+  .btn.primary:hover { background:rgba(34,197,94,0.32); }
+  .btn.danger  { background:rgba(239,68,68,0.16); border-color:rgba(239,68,68,0.4); color:#fca5a5; }
+  .btn.danger:hover { background:rgba(239,68,68,0.28); }
+  .btn-row { display:flex; gap:7px; flex-wrap:wrap; }
+
+  /* 源卡片 */
+  .src-card {
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+    border-radius:11px; overflow:hidden;
+  }
+  .src-card.disabled { opacity:0.5; }
+  .src-head {
+    display:flex; align-items:center; gap:9px; padding:11px 13px;
+    cursor:pointer; user-select:none;
+  }
+  .src-head:hover { background:rgba(255,255,255,0.03); }
+  .src-icon { font-size:17px; flex-shrink:0; }
+  .src-name { font-size:13px; font-weight:600; color:#e2e8f0; flex:1; }
+  .src-badge {
+    font-size:9px; padding:2px 7px; border-radius:10px; flex-shrink:0;
+    background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.3);
+  }
+  .src-badge.err { background:rgba(239,68,68,0.16); color:#fca5a5; border-color:rgba(239,68,68,0.32); }
+  .src-arrow { color:#64748b; font-size:11px; transition:transform .2s; }
+  .src-card.open .src-arrow { transform:rotate(90deg); }
+  .src-body { display:none; padding:0 13px 13px; flex-direction:column; gap:10px; }
+  .src-card.open .src-body { display:flex; }
+
+  .field { display:flex; flex-direction:column; gap:4px; }
+  .field-label { font-size:11px; color:#94a3b8; font-weight:500; }
+  .field-hint  { font-size:10px; color:#64748b; }
+  .test-out { font-size:10px; padding:5px 8px; border-radius:6px; font-family:ui-monospace,Menlo,monospace; word-break:break-all; }
+  .test-out.ok  { background:rgba(34,197,94,0.12); color:#86efac; }
+  .test-out.err { background:rgba(239,68,68,0.12); color:#fca5a5; }
+
+  /* 模板选择 */
+  .preset-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+  .preset-item {
+    display:flex; align-items:center; gap:8px; padding:9px 11px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+    border-radius:9px; cursor:pointer; transition:.15s;
+  }
+  .preset-item:hover { background:rgba(59,130,246,0.14); border-color:rgba(59,130,246,0.4); }
+  .preset-item .pi-icon { font-size:16px; }
+  .preset-item .pi-name { font-size:11.5px; color:#cbd5e1; }
+
+  .save-bar {
+    position:sticky; bottom:0; padding:12px 0 4px;
+    background:linear-gradient(180deg,transparent,#0f1117 34%);
+  }
+  .save-btn {
+    width:100%; padding:11px; border-radius:10px;
+    background:#22c55e; border:none; color:#fff; font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .save-btn:hover { background:#16a34a; }
+  .saved-tip { text-align:center; color:#22c55e; font-size:12px; height:15px; margin-top:5px; }
+</style>
+</head>
+<body>
+<div class="titlebar">
+  <span style="font-size:15px">⚙️</span>
+  <span class="titlebar-title" data-i18n="settings">偏好设置</span>
+  <button class="lang-btn" id="langBtn">EN</button>
+  <button class="close-btn" id="closeBtn">✕</button>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-pane="sources" data-i18n="tabSources">监控源</button>
+  <button class="tab" data-pane="appearance" data-i18n="tabAppearance">外观</button>
+  <button class="tab" data-pane="behavior"   data-i18n="tabBehavior">行为</button>
+  <button class="tab" data-pane="alerts"     data-i18n="tabAlerts">提醒</button>
+</div>
+
+<div class="content">
+  <!-- ══ 监控源 ══ -->
+  <div class="pane active" id="pane-sources">
+    <div class="section">
+      <div class="section-title" data-i18n="howItWorks">工作原理</div>
+      <div class="hint" data-i18n="howItWorksBody">
+        JasLight 通过<b>读取 AI 工具的日志文件</b>判断其运行状态。你需要为每个要监控的 AI 指定日志路径和状态匹配规则。<br>
+        路径支持占位符：<code>{DATE}</code> 当天日期、<code>{LATEST}</code> 目录内最新日志、<code>{LATEST_DIR}</code> 最新子目录、<code>*</code> 通配符、<code>~</code> 用户目录。
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="autoDetect" data-i18n="autoDetect">🔍 自动探测本机 AI 工具</button>
+        <button class="btn" id="exportCfg" data-i18n="exportCfg">导出配置</button>
+        <button class="btn" id="importCfg" data-i18n="importCfg">导入配置</button>
+      </div>
+      <div id="detectOut"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title" data-i18n="mySources">已配置的源</div>
+      <div id="srcList" style="display:flex;flex-direction:column;gap:9px"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title" data-i18n="addFromPreset">从模板添加</div>
+      <div class="hint" data-i18n="presetHint">点击即添加一份预置配置，添加后可展开修改路径与规则。</div>
+      <div class="preset-grid" id="presetGrid"></div>
+    </div>
+  </div>
+
+  <!-- ══ 外观 ══ -->
+  <div class="pane" id="pane-appearance">
+    <div class="section">
+      <div class="section-title" data-i18n="floatWindow">悬浮窗</div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="skin">皮肤</div><div class="row-sub" data-i18n="skinSub">光球或宠物形象，切换后立即生效</div></div>
+        <select id="skin"></select>
+      </div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="opacity">透明度</div></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="range" id="opacity" min="20" max="100" step="5">
+          <span id="opacity-val" style="font-size:12px;color:#94a3b8;width:32px;text-align:right"></span>
+        </div>
+      </div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="locked">锁定（点击穿透）</div><div class="row-sub" data-i18n="lockedSub">锁定后鼠标点击穿透到下层</div></div>
+        <label class="toggle"><input type="checkbox" id="locked"><span class="slider"></span></label>
+      </div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="miniStats">显示迷你统计</div><div class="row-sub" data-i18n="miniStatsSub">悬浮灯下方显示今日统计</div></div>
+        <label class="toggle"><input type="checkbox" id="showMiniStats"><span class="slider"></span></label>
+      </div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="srcRows">显示各源状态条</div><div class="row-sub" data-i18n="srcRowsSub">多源时在悬浮灯下方逐个显示</div></div>
+        <label class="toggle"><input type="checkbox" id="showSourceRows"><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 行为 ══ -->
+  <div class="pane" id="pane-behavior">
+    <div class="section">
+      <div class="section-title" data-i18n="system">系统</div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="autoLaunch">开机自启</div><div class="row-sub" data-i18n="autoLaunchSub">登录时自动在后台启动</div></div>
+        <label class="toggle"><input type="checkbox" id="autoLaunch"><span class="slider"></span></label>
+      </div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="jumpDecision">决策时点击悬浮灯跳转</div><div class="row-sub" data-i18n="jumpDecisionSub">红灯时单击 → 把对应 AI 应用拉到前台</div></div>
+        <label class="toggle"><input type="checkbox" id="jumpOnDecision"><span class="slider"></span></label>
+      </div>
+      <div class="row" style="flex-direction:column;align-items:stretch;gap:7px">
+        <div><div class="row-label" data-i18n="hotkeys">全局快捷键</div><div class="row-sub" data-i18n="hotkeysSub">如 Alt+Command+J（Win: Alt+Shift+J），留空禁用</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:11px;color:#64748b;width:56px" data-i18n="hkPanel">信息流</span>
+          <input type="text" id="hotkeyPanel" placeholder="Alt+Command+J">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:11px;color:#64748b;width:56px" data-i18n="hkFloat">悬浮灯</span>
+          <input type="text" id="hotkeyFloat" placeholder="Alt+Command+L">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title" data-i18n="pomodoroTitle">🍅 番茄钟联动</div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="pomoEnable">启用番茄钟</div><div class="row-sub" data-i18n="pomoEnableSub">AI 工作/决策时自动累计专注时长</div></div>
+        <label class="toggle"><input type="checkbox" id="pomodoro"><span class="slider"></span></label>
+      </div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="pomoFocus">专注时长</div></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="pomodoroMin" min="5" max="90"><span style="font-size:11px;color:#64748b" data-i18n="minutes">分钟</span>
+        </div>
+      </div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="pomoBreak">休息时长</div></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="pomodoroBreakMin" min="1" max="30"><span style="font-size:11px;color:#64748b" data-i18n="minutes">分钟</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 提醒 ══ -->
+  <div class="pane" id="pane-alerts">
+    <div class="section">
+      <div class="section-title" data-i18n="soundTitle">声音提示</div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="soundDecision">决策时播放提示音</div><div class="row-sub" data-i18n="soundDecisionSub">比系统通知更容易被注意</div></div>
+        <label class="toggle"><input type="checkbox" id="soundAlert"><span class="slider"></span></label>
+      </div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="soundName">提示音</div></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <select id="soundName"></select>
+          <button class="btn" id="testSound" data-i18n="testSound">试听</button>
+        </div>
+      </div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="soundDone">完成时也播放</div></div>
+        <label class="toggle"><input type="checkbox" id="soundOnDone"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title" data-i18n="alertTitle">异常告警</div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="alertWorking">AI 工作时间过长</div></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label class="toggle"><input type="checkbox" id="alertWorking"><span class="slider"></span></label>
+          <input type="number" id="alertWorkingMin" min="1" max="120"><span style="font-size:11px;color:#64748b" data-i18n="minutes">分钟</span>
+        </div>
+      </div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="alertDecision">等你决策超时</div></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label class="toggle"><input type="checkbox" id="alertDecision"><span class="slider"></span></label>
+          <input type="number" id="alertDecisionMin" min="1" max="60"><span style="font-size:11px;color:#64748b" data-i18n="minutes">分钟</span>
+        </div>
+      </div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="alertIdle">AI 长时间空闲</div></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label class="toggle"><input type="checkbox" id="alertIdle"><span class="slider"></span></label>
+          <input type="number" id="alertIdleMin" min="1" max="120"><span style="font-size:11px;color:#64748b" data-i18n="minutes">分钟</span>
+        </div>
+      </div>
+      <div class="row">
+        <div><div class="row-label" data-i18n="stuckTh">停滞检测阈值</div><div class="row-sub" data-i18n="stuckThSub">工作中超过此时间无新日志 → 疑似卡住</div></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="stuckMin" min="1" max="30"><span style="font-size:11px;color:#64748b" data-i18n="minutes">分钟</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="save-bar">
+    <button class="save-btn" id="saveBtn" data-i18n="save">保存设置</button>
+    <div class="saved-tip" id="saved-tip"></div>
+  </div>
+</div>
+
+<script src="i18n.js"></script>
+<script src="settings.js"></script>
+</body>
+</html>

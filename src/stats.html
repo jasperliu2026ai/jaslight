@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+    background:#0d0f14; color:#e2e8f0; overflow-x:hidden;
+  }
+
+  .titlebar {
+    height:42px; display:flex; align-items:center; gap:10px;
+    padding:0 14px; border-bottom:1px solid rgba(255,255,255,0.07);
+    -webkit-app-region:drag; position:sticky; top:0; background:#0d0f14; z-index:10;
+  }
+  .title { font-size:13px; font-weight:600; }
+  .close-btn {
+    margin-left:auto; width:20px; height:20px; border-radius:50%;
+    background:rgba(255,255,255,0.1); border:none; cursor:pointer;
+    color:#888; font-size:12px; display:flex; align-items:center; justify-content:center;
+    -webkit-app-region:no-drag;
+  }
+  .close-btn:hover { background:rgba(255,255,255,0.22); color:#fff; }
+
+  .tabs {
+    display:flex; gap:4px; padding:10px 14px 0;
+    -webkit-app-region:no-drag;
+  }
+  .tab {
+    padding:6px 14px; border-radius:8px 8px 0 0; cursor:pointer;
+    font-size:12px; color:#94a3b8; background:transparent; border:none;
+  }
+  .tab.active { background:rgba(255,255,255,0.07); color:#e2e8f0; font-weight:600; }
+
+  .content { padding:14px; }
+  .pane { display:none; }
+  .pane.active { display:block; }
+
+  .section { margin-bottom:18px; }
+  .sec-title {
+    font-size:11px; color:#64748b; text-transform:uppercase;
+    letter-spacing:0.6px; margin-bottom:8px; font-weight:600;
+  }
+
+  /* 卡片 */
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
+  .card {
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.07);
+    border-radius:12px; padding:12px 14px;
+  }
+  .card-label { font-size:10px; color:#64748b; margin-bottom:5px; }
+  .card-val   { font-size:21px; font-weight:700; letter-spacing:-0.5px; }
+  .card-sub   { font-size:10px; color:#475569; margin-top:3px; }
+
+  /* 状态色带 */
+  .band-wrap {
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07);
+    border-radius:10px; padding:12px;
+  }
+  .band {
+    display:flex; height:26px; border-radius:6px; overflow:hidden;
+    background:rgba(255,255,255,0.05);
+  }
+  .band-cell { flex:1 0 auto; min-width:1px; }
+  .band-axis {
+    display:flex; justify-content:space-between;
+    font-size:9px; color:#475569; margin-top:5px;
+  }
+  .legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+  .legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:#94a3b8; }
+  .legend-dot { width:9px; height:9px; border-radius:3px; }
+
+  /* 每日柱状 */
+  .bars { display:flex; align-items:flex-end; gap:5px; height:130px; padding-top:6px; }
+  .bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end; }
+  .bar {
+    width:100%; max-width:34px; border-radius:4px 4px 0 0;
+    background:linear-gradient(180deg,#f59e0b,#d97706); min-height:2px;
+    transition:height 0.3s;
+  }
+  .bar-lbl { font-size:9px; color:#475569; white-space:nowrap; }
+  .bar-val { font-size:9px; color:#94a3b8; font-weight:600; }
+
+  /* 表格 */
+  table { width:100%; border-collapse:collapse; font-size:11px; }
+  th {
+    text-align:left; padding:7px 8px; color:#64748b; font-weight:600;
+    border-bottom:1px solid rgba(255,255,255,0.08); font-size:10px;
+  }
+  td { padding:7px 8px; border-bottom:1px solid rgba(255,255,255,0.04); color:#cbd5e1; }
+  tr:hover td { background:rgba(255,255,255,0.03); }
+  .num { text-align:right; font-variant-numeric:tabular-nums; }
+
+  /* 按钮 */
+  .btn-row { display:flex; gap:8px; flex-wrap:wrap; }
+  .btn {
+    padding:7px 14px; border-radius:8px; cursor:pointer; font-size:11px;
+    background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12);
+    color:#cbd5e1;
+  }
+  .btn:hover { background:rgba(255,255,255,0.14); color:#fff; }
+  .btn.primary { background:rgba(59,130,246,0.22); border-color:rgba(59,130,246,0.45); color:#93c5fd; }
+  .btn.primary:hover { background:rgba(59,130,246,0.34); }
+
+  /* 番茄 */
+  .pomo-row { display:flex; align-items:center; gap:14px; }
+  .pomo-tomatoes { font-size:20px; letter-spacing:2px; line-height:1.3; }
+  .pomo-ring {
+    width:64px; height:64px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700;
+    background:conic-gradient(#ef4444 var(--p,0%), rgba(255,255,255,0.08) 0);
+    position:relative;
+  }
+  .pomo-ring::after {
+    content:''; position:absolute; inset:7px; border-radius:50%; background:#0d0f14;
+  }
+  .pomo-ring span { position:relative; z-index:1; }
+
+  /* 信息流 */
+  .feed { display:flex; flex-direction:column; gap:5px; max-height:300px; overflow-y:auto; }
+  .feed::-webkit-scrollbar { width:4px; }
+  .feed::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:2px; }
+  .entry {
+    display:flex; gap:7px; padding:6px 9px; border-radius:8px;
+    background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.05);
+    font-size:11px; align-items:flex-start;
+  }
+  .entry-text { flex:1; color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .entry-time { font-size:9px; color:#475569; flex-shrink:0; }
+  .entry-src  { font-size:9px; color:#3b82f6; flex-shrink:0; }
+  .empty { color:#475569; font-size:11px; text-align:center; padding:26px 0; }
+</style>
+</head>
+<body>
+<div class="titlebar">
+  <div class="title">JasLight · 工时报表与统计</div>
+  <button class="close-btn" id="closeBtn">✕</button>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-pane="today">今日</button>
+  <button class="tab" data-pane="week">周报</button>
+  <button class="tab" data-pane="history">历史明细</button>
+</div>
+
+<div class="content">
+  <!-- ── 今日 ── -->
+  <div class="pane active" id="pane-today">
+    <div class="section">
+      <div class="sec-title">今日概览</div>
+      <div class="cards" id="cards-today"></div>
+    </div>
+
+    <div class="section">
+      <div class="sec-title">状态时间轴（今日 0:00 – 24:00）</div>
+      <div class="band-wrap">
+        <div class="band" id="band"></div>
+        <div class="band-axis">
+          <span>0:00</span><span>6:00</span><span>12:00</span><span>18:00</span><span>24:00</span>
+        </div>
+        <div class="legend" id="legend"></div>
+      </div>
+    </div>
+
+    <div class="section" id="pomo-section">
+      <div class="sec-title">🍅 番茄钟</div>
+      <div class="band-wrap">
+        <div class="pomo-row">
+          <div class="pomo-ring" id="pomoRing"><span id="pomoPct">0%</span></div>
+          <div style="flex:1">
+            <div class="pomo-tomatoes" id="pomoList">—</div>
+            <div class="card-sub" id="pomoSub"></div>
+          </div>
+          <button class="btn" id="resetPomo">重置</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="src-section" style="display:none">
+      <div class="sec-title">各监控源</div>
+      <table>
+        <thead><tr><th>源</th><th>状态</th><th class="num">工作</th><th class="num">决策</th><th class="num">完成</th></tr></thead>
+        <tbody id="srcBody"></tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="sec-title">实时信息流</div>
+      <div class="feed" id="feed"><div class="empty">等待 AI 活动…</div></div>
+    </div>
+  </div>
+
+  <!-- ── 周报 ── -->
+  <div class="pane" id="pane-week">
+    <div class="section">
+      <div class="sec-title">近 7 天工作时长（分钟）</div>
+      <div class="band-wrap"><div class="bars" id="weekBars"></div></div>
+    </div>
+    <div class="section">
+      <div class="sec-title">本周汇总</div>
+      <div class="cards" id="cards-week"></div>
+    </div>
+    <div class="section">
+      <div class="sec-title">导出</div>
+      <div class="btn-row">
+        <button class="btn primary" data-export="week">导出近 7 天 CSV</button>
+        <button class="btn" data-export="month">导出近 30 天 CSV</button>
+        <button class="btn" data-export="all">导出全部 CSV</button>
+      </div>
+      <div class="card-sub" id="exportMsg" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- ── 历史明细 ── -->
+  <div class="pane" id="pane-history">
+    <div class="section">
+      <div class="sec-title">按日明细（最近 60 天）</div>
+      <table>
+        <thead><tr>
+          <th>日期</th><th class="num">工作</th><th class="num">空闲</th>
+          <th class="num">决策</th><th class="num">完成</th><th class="num">🍅</th>
+        </tr></thead>
+        <tbody id="histBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const { ipcRenderer } = require('electron');
+
+const COLORS = {
+  off:'#6b7280', idle:'#22c55e', working:'#f59e0b',
+  decision:'#ef4444', done:'#3b82f6', stuck:'#a855f7',
+};
+const LABELS = {
+  off:'未监控', idle:'空闲', working:'工作中',
+  decision:'待决策', done:'已完成', stuck:'疑似卡住',
+};
+const ICONS = { file:'📄', cmd:'⚡', decision:'🔴', done:'✅', system:'ℹ️', default:'💬' };
+
+let statsData = null, historyData = null;
+
+const fmtMin = ms => {
+  const m = Math.round(ms/60000);
+  return m >= 60 ? `${Math.floor(m/60)}h${String(m%60).padStart(2,'0')}m` : `${m}m`;
+};
+
+// ── Tab 切换 ──
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.pane').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('pane-' + t.dataset.pane).classList.add('active');
+    if (t.dataset.pane !== 'today') ipcRenderer.send('get-history');
+  });
+});
+
+document.getElementById('closeBtn').addEventListener('click', () => ipcRenderer.send('close-win'));
+document.getElementById('resetPomo').addEventListener('click', () => {
+  ipcRenderer.send('reset-pomodoro');
+  setTimeout(() => ipcRenderer.send('get-stats'), 200);
+});
+document.querySelectorAll('[data-export]').forEach(b => {
+  b.addEventListener('click', () => {
+    document.getElementById('exportMsg').textContent = '正在导出…';
+    ipcRenderer.send('export-csv', { scope: b.dataset.export });
+  });
+});
+
+// ── 今日卡片 ──
+function renderTodayCards(d) {
+  const total = d.stats.workingMs + d.stats.idleMs;
+  const rate  = total ? Math.round(d.stats.workingMs / total * 100) : 0;
+  document.getElementById('cards-today').innerHTML = `
+    <div class="card">
+      <div class="card-label">工作时长</div>
+      <div class="card-val" style="color:#f59e0b">${fmtMin(d.stats.workingMs)}</div>
+      <div class="card-sub">占比 ${rate}%</div>
+    </div>
+    <div class="card">
+      <div class="card-label">空闲时长</div>
+      <div class="card-val" style="color:#22c55e">${fmtMin(d.stats.idleMs)}</div>
+      <div class="card-sub">占比 ${100-rate}%</div>
+    </div>
+    <div class="card">
+      <div class="card-label">决策次数</div>
+      <div class="card-val" style="color:#ef4444">${d.stats.decisionCount}</div>
+      <div class="card-sub">等你确认</div>
+    </div>
+    <div class="card">
+      <div class="card-label">完成任务</div>
+      <div class="card-val" style="color:#3b82f6">${d.stats.taskCount}</div>
+      <div class="card-sub">round 完成数</div>
+    </div>
+    <div class="card">
+      <div class="card-label">当前状态</div>
+      <div class="card-val" style="font-size:15px;color:${COLORS[d.currentState]||'#6b7280'}">${LABELS[d.currentState]||d.currentState}</div>
+      <div class="card-sub">已持续 ${fmtMin(Date.now()-d.stats.lastStateTime)}</div>
+    </div>
+  `;
+}
+
+// ── 状态色带（今日 24h，每 5 分钟一格 = 288 格） ──
+function renderBand(timeline) {
+  const SLOT = 5 * 60 * 1000;
+  const start = new Date(); start.setHours(0,0,0,0);
+  const day0 = start.getTime();
+  const slots = new Array(288).fill(null);
+
+  // 用 timeline 事件填充：某事件之后到下一事件之间都是该状态
+  const evts = (timeline||[]).filter(e => e.time >= day0).sort((a,b) => a.time - b.time);
+  evts.forEach((e, i) => {
+    const from = Math.floor((e.time - day0) / SLOT);
+    const next = evts[i+1] ? Math.floor((evts[i+1].time - day0) / SLOT) : Math.floor((Date.now() - day0) / SLOT);
+    for (let s = Math.max(0, from); s <= Math.min(287, next); s++) {
+      // 优先级：decision > stuck > working > done > idle
+      const pri = { decision:6, stuck:5, working:4, done:3, idle:2, off:1 };
+      if (!slots[s] || (pri[e.to]||0) > (pri[slots[s]]||0)) slots[s] = e.to;
+    }
+  });
+
+  const nowSlot = Math.floor((Date.now() - day0) / SLOT);
+  document.getElementById('band').innerHTML = slots.map((s, i) => {
+    const c = i > nowSlot ? 'rgba(255,255,255,0.03)' : (COLORS[s] || 'rgba(255,255,255,0.06)');
+    const h = String(Math.floor(i*5/60)).padStart(2,'0') + ':' + String((i*5)%60).padStart(2,'0');
+    return `<div class="band-cell" style="background:${c}" title="${h} ${LABELS[s]||''}"></div>`;
+  }).join('');
+
+  document.getElementById('legend').innerHTML = Object.keys(LABELS).map(k => `
+    <div class="legend-item">
+      <span class="legend-dot" style="background:${COLORS[k]}"></span>${LABELS[k]}
+    </div>
+  `).join('');
+}
+
+// ── 番茄钟 ──
+function renderPomo(p) {
+  const sec = document.getElementById('pomo-section');
+  if (!p || !p.enabled) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  const target = (p.targetMin || 25) * 60000;
+  const pct = Math.min(100, Math.round((p.focusMs || 0) / target * 100));
+  const ring = document.getElementById('pomoRing');
+  ring.style.setProperty('--p', pct + '%');
+  document.getElementById('pomoPct').textContent = pct + '%';
+  document.getElementById('pomoList').textContent = p.completed ? '🍅'.repeat(Math.min(p.completed, 12)) + (p.completed > 12 ? ` +${p.completed-12}` : '') : '—';
+  document.getElementById('pomoSub').textContent = p.onBreak
+    ? `休息中 · 已完成 ${p.completed} 个番茄`
+    : `已完成 ${p.completed} 个番茄 · 当前进度 ${fmtMin(p.focusMs||0)} / ${p.targetMin}m`;
+}
+
+// ── 各源表格 ──
+function renderSources(per) {
+  const sec = document.getElementById('src-section');
+  const keys = Object.keys(per || {});
+  if (keys.length <= 1) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  document.getElementById('srcBody').innerHTML = keys.map(id => {
+    const s = per[id];
+    return `<tr>
+      <td>${s.label}</td>
+      <td><span style="color:${COLORS[s.state]}">● ${LABELS[s.state]||s.state}</span></td>
+      <td class="num">${fmtMin(s.workingMs)}</td>
+      <td class="num">${s.decisionCount}</td>
+      <td class="num">${s.taskCount}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── 周报 ──
+function renderWeek(hist, todayKey) {
+  const keys = Object.keys(hist).sort();
+  const last7 = keys.slice(-7);
+  const maxMs = Math.max(1, ...last7.map(k => hist[k].workingMs || 0));
+
+  document.getElementById('weekBars').innerHTML = last7.map(k => {
+    const d = hist[k];
+    const h = Math.max(2, Math.round((d.workingMs||0) / maxMs * 100));
+    const wd = ['日','一','二','三','四','五','六'][new Date(k).getDay()];
+    return `<div class="bar-col">
+      <div class="bar-val">${Math.round((d.workingMs||0)/60000)}</div>
+      <div class="bar" style="height:${h}%;${k===todayKey?'background:linear-gradient(180deg,#60a5fa,#3b82f6)':''}"></div>
+      <div class="bar-lbl">${k.slice(5)}<br>周${wd}</div>
+    </div>`;
+  }).join('') || '<div class="empty">暂无历史数据</div>';
+
+  const sum = last7.reduce((a, k) => {
+    const d = hist[k];
+    a.w += d.workingMs||0; a.i += d.idleMs||0;
+    a.dc += d.decisionCount||0; a.tc += d.taskCount||0; a.p += d.pomodoro||0;
+    return a;
+  }, { w:0, i:0, dc:0, tc:0, p:0 });
+
+  const days = last7.length || 1;
+  document.getElementById('cards-week').innerHTML = `
+    <div class="card"><div class="card-label">总工作时长</div><div class="card-val" style="color:#f59e0b">${fmtMin(sum.w)}</div><div class="card-sub">日均 ${fmtMin(sum.w/days)}</div></div>
+    <div class="card"><div class="card-label">完成任务</div><div class="card-val" style="color:#3b82f6">${sum.tc}</div><div class="card-sub">日均 ${(sum.tc/days).toFixed(1)}</div></div>
+    <div class="card"><div class="card-label">决策次数</div><div class="card-val" style="color:#ef4444">${sum.dc}</div><div class="card-sub">日均 ${(sum.dc/days).toFixed(1)}</div></div>
+    <div class="card"><div class="card-label">番茄数</div><div class="card-val">🍅 ${sum.p}</div><div class="card-sub">日均 ${(sum.p/days).toFixed(1)}</div></div>
+  `;
+}
+
+// ── 历史明细 ──
+function renderHistory(hist) {
+  const keys = Object.keys(hist).sort().reverse();
+  document.getElementById('histBody').innerHTML = keys.map(k => {
+    const d = hist[k];
+    return `<tr>
+      <td>${k}</td>
+      <td class="num">${fmtMin(d.workingMs||0)}</td>
+      <td class="num">${fmtMin(d.idleMs||0)}</td>
+      <td class="num">${d.decisionCount||0}</td>
+      <td class="num">${d.taskCount||0}</td>
+      <td class="num">${d.pomodoro||0}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" class="empty">暂无历史数据</td></tr>';
+}
+
+// ── IPC ──
+ipcRenderer.on('stats-data', (_, d) => {
+  statsData = d;
+  renderTodayCards(d);
+  renderBand(d.timeline);
+  renderPomo(d.pomodoro);
+  renderSources(d.perSource);
+});
+
+ipcRenderer.on('history-data', (_, d) => {
+  historyData = d.history || {};
+  renderWeek(historyData, d.today);
+  renderHistory(historyData);
+});
+
+ipcRenderer.on('feed-update', (_, entries) => {
+  const el = document.getElementById('feed');
+  if (!entries || !entries.length) { el.innerHTML = '<div class="empty">等待 AI 活动…</div>'; return; }
+  el.innerHTML = entries.map(e => `
+    <div class="entry">
+      <span>${ICONS[e.type]||ICONS.default}</span>
+      <span class="entry-text">${e.text}</span>
+      ${e.srcLabel ? `<span class="entry-src">${e.srcLabel}</span>` : ''}
+      <span class="entry-time">${e.time}</span>
+    </div>
+  `).join('');
+});
+
+ipcRenderer.on('export-done', (_, r) => {
+  const el = document.getElementById('exportMsg');
+  if (r.ok) el.textContent = '✅ 已导出到 ' + r.path;
+  else if (r.canceled) el.textContent = '已取消';
+  else el.textContent = '❌ 导出失败：' + (r.error || '未知错误');
+});
+
+ipcRenderer.send('get-stats');
+ipcRenderer.send('get-feed');
+ipcRenderer.send('get-history');
+setInterval(() => ipcRenderer.send('get-stats'), 5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+// ── 中英文词条 ────────────────────────────────────────────────────────────────
+window.I18N = {
+  zh: {
+    settings: '偏好设置',
+    tabSources: '监控源', tabAppearance: '外观', tabBehavior: '行为', tabAlerts: '提醒',
+    howItWorks: '工作原理',
+    howItWorksBody: 'JasLight 通过<b>读取 AI 工具的日志文件</b>判断其运行状态。你需要为每个要监控的 AI 指定日志路径和状态匹配规则。<br>路径支持占位符：<code>{DATE}</code> 当天日期、<code>{LATEST}</code> 目录内最新日志、<code>{LATEST_DIR}</code> 最新子目录、<code>*</code> 通配符、<code>~</code> 用户目录。',
+    autoDetect: '🔍 自动探测本机 AI 工具',
+    exportCfg: '导出配置', importCfg: '导入配置',
+    mySources: '已配置的源', addFromPreset: '从模板添加',
+    presetHint: '点击即添加一份预置配置，添加后可展开修改路径与规则。',
+    floatWindow: '悬浮窗',
+    skin: '皮肤', skinSub: '光球或宠物形象，切换后立即生效',
+    opacity: '透明度',
+    locked: '锁定（点击穿透）', lockedSub: '锁定后鼠标点击穿透到下层',
+    miniStats: '显示迷你统计', miniStatsSub: '悬浮灯下方显示今日统计',
+    srcRows: '显示各源状态条', srcRowsSub: '多源时在悬浮灯下方逐个显示',
+    system: '系统',
+    autoLaunch: '开机自启', autoLaunchSub: '登录时自动在后台启动',
+    jumpDecision: '决策时点击悬浮灯跳转', jumpDecisionSub: '红灯时单击 → 把对应 AI 应用拉到前台',
+    hotkeys: '全局快捷键', hotkeysSub: '如 Alt+Command+J（Win: Alt+Shift+J），留空禁用',
+    hkPanel: '信息流', hkFloat: '悬浮灯',
+    pomodoroTitle: '🍅 番茄钟联动',
+    pomoEnable: '启用番茄钟', pomoEnableSub: 'AI 工作/决策时自动累计专注时长',
+    pomoFocus: '专注时长', pomoBreak: '休息时长', minutes: '分钟',
+    soundTitle: '声音提示',
+    soundDecision: '决策时播放提示音', soundDecisionSub: '比系统通知更容易被注意',
+    soundName: '提示音', testSound: '试听', soundDone: '完成时也播放',
+    alertTitle: '异常告警',
+    alertWorking: 'AI 工作时间过长', alertDecision: '等你决策超时', alertIdle: 'AI 长时间空闲',
+    stuckTh: '停滞检测阈值', stuckThSub: '工作中超过此时间无新日志 → 疑似卡住',
+    save: '保存设置', saved: '✓ 已保存',
+    // 源卡片
+    fLogPath: '日志路径', fLogPathHint: '支持 {DATE} / {LATEST} / {LATEST_DIR} / * / ~',
+    fProcess: '进程名', fProcessHint: '用于检测应用是否在运行，留空则只看日志文件',
+    fApp: '应用名', fAppHint: '一键跳转时激活的应用（macOS 用 App 名，Windows 用 exe 名）',
+    fName: '显示名称',
+    pStart: '开始（用户发起）', pWorking: '工作中（工具/生成）',
+    pDecision: '需要决策（等待审批）', pDone: '完成',
+    testPath: '测试路径', remove: '删除', patterns: '状态匹配正则（不区分大小写）',
+    resolved: '已解析', notFound: '未找到文件', size: '大小', modified: '修改时间',
+    detectFound: '探测到以下 AI 工具，点击添加：', detectNone: '未探测到已知 AI 工具，请手动配置',
+    noSources: '还没有配置监控源，点击上方「自动探测」或从下方模板添加',
+    enabled: '已启用', disabled: '未启用', logOk: '日志正常', logMissing: '日志缺失',
+  },
+  en: {
+    settings: 'Preferences',
+    tabSources: 'Sources', tabAppearance: 'Appearance', tabBehavior: 'Behavior', tabAlerts: 'Alerts',
+    howItWorks: 'How it works',
+    howItWorksBody: 'JasLight determines AI status by <b>tailing log files</b> of AI tools. For each AI you want to monitor, specify its log path and status matching patterns.<br>Path placeholders: <code>{DATE}</code> today, <code>{LATEST}</code> newest log in dir, <code>{LATEST_DIR}</code> newest subdir, <code>*</code> wildcard, <code>~</code> home.',
+    autoDetect: '🔍 Auto-detect AI tools',
+    exportCfg: 'Export config', importCfg: 'Import config',
+    mySources: 'Configured sources', addFromPreset: 'Add from preset',
+    presetHint: 'Click to add a preset. Expand it afterwards to tweak paths and patterns.',
+    floatWindow: 'Floating window',
+    skin: 'Skin', skinSub: 'Orb or pet character, applies instantly',
+    opacity: 'Opacity',
+    locked: 'Lock (click-through)', lockedSub: 'Mouse clicks pass through to layers below',
+    miniStats: 'Show mini stats', miniStatsSub: 'Today\'s stats under the light',
+    srcRows: 'Show per-source rows', srcRowsSub: 'List each source under the light when multiple',
+    system: 'System',
+    autoLaunch: 'Launch at login', autoLaunchSub: 'Start hidden in background on login',
+    jumpDecision: 'Click to jump on decision', jumpDecisionSub: 'Red light + click → bring the AI app to front',
+    hotkeys: 'Global hotkeys', hotkeysSub: 'e.g. Alt+Command+J (Win: Alt+Shift+J), empty to disable',
+    hkPanel: 'Feed', hkFloat: 'Light',
+    pomodoroTitle: '🍅 Pomodoro',
+    pomoEnable: 'Enable Pomodoro', pomoEnableSub: 'Accumulate focus time while AI works',
+    pomoFocus: 'Focus duration', pomoBreak: 'Break duration', minutes: 'min',
+    soundTitle: 'Sound',
+    soundDecision: 'Play sound on decision', soundDecisionSub: 'Harder to miss than a notification',
+    soundName: 'Sound', testSound: 'Test', soundDone: 'Also play on done',
+    alertTitle: 'Alerts',
+    alertWorking: 'Working too long', alertDecision: 'Decision timeout', alertIdle: 'Idle too long',
+    stuckTh: 'Stuck threshold', stuckThSub: 'No new log while working for this long → stuck',
+    save: 'Save', saved: '✓ Saved',
+    fLogPath: 'Log path', fLogPathHint: 'Supports {DATE} / {LATEST} / {LATEST_DIR} / * / ~',
+    fProcess: 'Process name', fProcessHint: 'Used to detect if app is running; empty = log file only',
+    fApp: 'App name', fAppHint: 'App activated on jump (macOS app name, Windows exe name)',
+    fName: 'Display name',
+    pStart: 'Start (user turn)', pWorking: 'Working (tool/generate)',
+    pDecision: 'Decision (awaiting approval)', pDone: 'Done',
+    testPath: 'Test path', remove: 'Remove', patterns: 'Status regex patterns (case-insensitive)',
+    resolved: 'Resolved', notFound: 'File not found', size: 'Size', modified: 'Modified',
+    detectFound: 'Detected these AI tools, click to add:', detectNone: 'No known AI tools detected, configure manually',
+    noSources: 'No sources yet. Use "Auto-detect" above or add from presets below.',
+    enabled: 'Enabled', disabled: 'Disabled', logOk: 'Log OK', logMissing: 'Log missing',
+  },
+};
+
+window.LANG = 'zh';
+window.t = function (key) {
+  const d = window.I18N[window.LANG] || window.I18N.zh;
+  return d[key] !== undefined ? d[key] : (window.I18N.zh[key] || key);
+};
+window.applyI18n = function () {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    const v = window.t(k);
+    if (/<[a-z]/i.test(v)) el.innerHTML = v; else el.textContent = v;
+  });
+};
