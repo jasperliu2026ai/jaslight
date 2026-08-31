@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; user-select:none; }
+  html, body { width:100px; background:transparent; overflow:hidden; }
+
+  /* ── 容器 ── */
+  .orb-wrap {
+    width:100px; height:90px;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+    -webkit-app-region: no-drag;
+    cursor: pointer;
+  }
+
+  /* ══════════════ 皮肤 A：光球 ══════════════ */
+  .orb {
+    width:40px; height:40px; border-radius:50%;
+    position:relative; flex-shrink:0;
+    box-shadow: 0 0 10px 2px var(--c, #6b7280);
+    background: radial-gradient(circle at 38% 35%, color-mix(in srgb, var(--c, #6b7280) 60%, white), var(--c, #6b7280));
+    transition: background 0.4s, box-shadow 0.4s;
+    -webkit-app-region: no-drag;
+    pointer-events: auto;
+  }
+
+  /* 窗口 100x90，光球居中，垂直可用半径 45px
+     最大占用 = 20 * 1.07 + (14 + 5) = 40.4px < 45px ✓ 不裁切 */
+  @keyframes breath {
+    0%,100%{ transform:scale(1);    box-shadow:0 0 10px 2px var(--c); }
+    50%    { transform:scale(1.07); box-shadow:0 0 14px 5px var(--c); }
+  }
+  @keyframes fast {
+    0%,100%{ transform:scale(1);    box-shadow:0 0 10px 2px var(--c); }
+    50%    { transform:scale(1.07); box-shadow:0 0 14px 5px var(--c); }
+  }
+  @keyframes slow {
+    0%,100%{ opacity:1;    box-shadow:0 0 8px 2px var(--c); }
+    50%    { opacity:0.55; box-shadow:0 0 5px 1px var(--c); }
+  }
+  @keyframes blink {
+    0%,45%,55%,100%{ opacity:1; } 48%,52%{ opacity:0.15; }
+  }
+
+  .anim-breath .orb  { animation: breath 2.8s ease-in-out infinite; }
+  .anim-fast .orb    { animation: fast   1.8s ease-in-out infinite; }
+  .anim-slow .orb    { animation: slow   3s   ease-in-out infinite; }
+  .anim-blink .orb   { animation: blink  1.1s linear infinite; }
+
+  /* ══════════════ 皮肤 B：宠物 ══════════════ */
+  .pet {
+    position:relative; flex-shrink:0;
+    width:56px; height:56px;
+    display:flex; align-items:center; justify-content:center;
+    -webkit-app-region: no-drag; pointer-events:auto;
+  }
+
+  /* 状态色光晕（宠物脚下的光垫） */
+  .pet-glow {
+    position:absolute; left:50%; top:52%;
+    width:44px; height:44px; margin:-22px 0 0 -22px;
+    border-radius:50%;
+    background: radial-gradient(circle, var(--c,#6b7280) 0%, transparent 68%);
+    opacity:0.34; filter:blur(5px);
+    transition: background 0.4s, opacity 0.4s;
+    pointer-events:none;
+  }
+
+  .pet-face {
+    font-size:40px; line-height:1;
+    position:relative; z-index:2;
+    /* emoji 本身带彩色，仅加轻微状态色描边光 */
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--c,#6b7280) 70%, transparent));
+    transition: filter 0.4s;
+  }
+
+  /* 状态角标 */
+  .pet-badge {
+    position:absolute; right:-1px; top:-3px; z-index:3;
+    font-size:15px; line-height:1;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+  }
+
+  /* ── 宠物动画 ──
+     容器 56px 居中于 90px 高窗口 → 上下各 17px 余量
+     所有位移 ≤ 6px、缩放 ≤ 1.08 → 最大占用 30.2 + 6 = 36.2px < 45px ✓ */
+
+  /* off：睡觉 —— 缓慢左右倾斜 */
+  @keyframes petSleep {
+    0%,100%{ transform:rotate(-5deg) scale(0.94); }
+    50%    { transform:rotate(5deg)  scale(0.94); }
+  }
+  /* idle：轻呼吸 */
+  @keyframes petIdle {
+    0%,100%{ transform:scale(1)    translateY(0); }
+    50%    { transform:scale(1.05) translateY(-2px); }
+  }
+  /* working：摇摆 + 挤压拉伸（忙碌感） */
+  @keyframes petWork {
+    0%,100%{ transform:rotate(-7deg) scaleY(1)    scaleX(1)    translateY(0); }
+    25%    { transform:rotate(0deg)  scaleY(0.92) scaleX(1.07) translateY(2px); }
+    50%    { transform:rotate(7deg)  scaleY(1.06) scaleX(0.95) translateY(-3px); }
+    75%    { transform:rotate(0deg)  scaleY(0.94) scaleX(1.05) translateY(1px); }
+  }
+  /* decision：原地跳跃求关注 */
+  @keyframes petAlert {
+    0%,100%{ transform:translateY(0)    scaleY(1)    scaleX(1); }
+    18%    { transform:translateY(1px)  scaleY(0.86) scaleX(1.14); }
+    45%    { transform:translateY(-6px) scaleY(1.1)  scaleX(0.93); }
+    72%    { transform:translateY(0)    scaleY(0.94) scaleX(1.05); }
+  }
+  /* done：开心大跳 + 转身 */
+  @keyframes petHappy {
+    0%,100%{ transform:translateY(0)    rotate(0deg)   scale(1); }
+    25%    { transform:translateY(-5px) rotate(-11deg) scale(1.08); }
+    50%    { transform:translateY(0)    rotate(0deg)   scale(1); }
+    75%    { transform:translateY(-4px) rotate(11deg)  scale(1.06); }
+  }
+  /* stuck：呆住颤抖 */
+  @keyframes petShake {
+    0%,100%{ transform:translateX(0)    rotate(0deg); }
+    20%    { transform:translateX(-3px) rotate(-3deg); }
+    40%    { transform:translateX(3px)  rotate(3deg); }
+    60%    { transform:translateX(-2px) rotate(-2deg); }
+    80%    { transform:translateX(2px)  rotate(2deg); }
+  }
+  /* 角标闪烁（decision 用） */
+  @keyframes badgePulse {
+    0%,100%{ transform:scale(1);   opacity:1; }
+    50%    { transform:scale(1.3); opacity:0.65; }
+  }
+  /* 光垫呼吸 */
+  @keyframes glowPulse {
+    0%,100%{ opacity:0.28; transform:scale(1); }
+    50%    { opacity:0.5;  transform:scale(1.12); }
+  }
+
+  .pet-slow   .pet-face { animation: petSleep 3.4s ease-in-out infinite; }
+  .pet-breath .pet-face { animation: petIdle  2.8s ease-in-out infinite; }
+  .pet-fast   .pet-face { animation: petWork  1.1s ease-in-out infinite; }
+  .pet-blink  .pet-face { animation: petAlert 0.9s ease-in-out infinite; }
+  .pet-happy  .pet-face { animation: petHappy 1.3s ease-in-out infinite; }
+  .pet-shake  .pet-face { animation: petShake 0.7s ease-in-out infinite; }
+
+  .pet-blink .pet-badge { animation: badgePulse 0.75s ease-in-out infinite; }
+  .pet-fast  .pet-glow  { animation: glowPulse  1.1s ease-in-out infinite; }
+  .pet-breath .pet-glow { animation: glowPulse  2.8s ease-in-out infinite; }
+  .pet-slow  .pet-glow  { opacity:0.16; }
+
+  /* ── 迷你统计 ── */
+  #mini-stats {
+    width:100px; padding:2px 8px 6px;
+    display:flex; flex-direction:column; gap:3px;
+    -webkit-app-region: no-drag;
+  }
+  .mini-row {
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:10px; font-family:-apple-system,sans-serif;
+    background:rgba(0,0,0,0.55); border-radius:6px;
+    padding:2px 5px; color:#fff;
+  }
+  .mini-dot { width:6px;height:6px;border-radius:50%;flex-shrink:0; }
+  .mini-val { font-weight:600; font-size:10px; }
+
+  /* ── 多源状态条 ── */
+  #multi-src {
+    width:100px; padding:0 8px 3px;
+    display:flex; flex-direction:column; gap:2px;
+    -webkit-app-region: no-drag;
+  }
+  .src-row {
+    display:flex; align-items:center; gap:4px;
+    font-size:9px; font-family:-apple-system,sans-serif;
+    background:rgba(0,0,0,0.6); border-radius:5px;
+    padding:1px 4px; color:#fff; cursor:pointer;
+  }
+  .src-row:hover { background:rgba(0,0,0,0.8); }
+  .src-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; box-shadow:0 0 4px currentColor; }
+  .src-name { flex:1; color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+</style>
+</head>
+<body>
+<div class="orb-wrap" id="wrap">
+  <!-- 光球皮肤 -->
+  <div class="orb" id="orb"></div>
+  <!-- 宠物皮肤 -->
+  <div class="pet" id="pet" style="display:none">
+    <div class="pet-glow"  id="petGlow"></div>
+    <div class="pet-face"  id="petFace">🐱</div>
+    <div class="pet-badge" id="petBadge"></div>
+  </div>
+</div>
+<div id="multi-src"></div>
+<div id="mini-stats"></div>
+
+<script>
+const { ipcRenderer } = require('electron');
+
+// ─── 宠物皮肤表 ───────────────────────────────────────────────────────────────
+const PETS = {
+  cat:     { emoji:'🐱', faces:{ off:'😴', idle:'😽', working:'😼', decision:'😾', done:'😻', stuck:'🙀' } },
+  dog:     { emoji:'🐶' },
+  penguin: { emoji:'🐧' },
+  fox:     { emoji:'🦊' },
+  panda:   { emoji:'🐼' },
+  chick:   { emoji:'🐥' },
+  rabbit:  { emoji:'🐰' },
+  hamster: { emoji:'🐹' },
+  frog:    { emoji:'🐸' },
+  bear:    { emoji:'🐻' },
+};
+
+// 状态 → 角标 / 动画
+const PET_STATE = {
+  off:      { badge:'💤', anim:'pet-slow'   },
+  idle:     { badge:'',   anim:'pet-breath' },
+  working:  { badge:'⚡', anim:'pet-fast'   },
+  decision: { badge:'❗', anim:'pet-blink'  },
+  done:     { badge:'✅', anim:'pet-happy'  },
+  stuck:    { badge:'❓', anim:'pet-shake'  },
+};
+
+const STATES = {};
+let currentState = 'off';
+let currentSkin  = 'orb';
+let statsData = { workingMs:0, decisionCount:0, taskCount:0, idleMs:0 };
+let showMini = true;
+let multiSource = false;
+let perSource = {};
+let showSourceRows = true;
+let jumpOnDecision = true;
+let isDragging = false;
+let dragStart = null;
+
+const wrap     = document.getElementById('wrap');
+const orb      = document.getElementById('orb');
+const pet      = document.getElementById('pet');
+const petGlow  = document.getElementById('petGlow');
+const petFace  = document.getElementById('petFace');
+const petBadge = document.getElementById('petBadge');
+const mini     = document.getElementById('mini-stats');
+const multiEl  = document.getElementById('multi-src');
+
+function applyState(state, states) {
+  const s = states[state] || states.off;
+
+  if (currentSkin === 'orb') {
+    orb.style.display = '';
+    pet.style.display = 'none';
+    wrap.className = 'orb-wrap anim-' + s.anim;
+    orb.style.setProperty('--c', s.color);
+  } else {
+    orb.style.display = 'none';
+    pet.style.display = '';
+    const cfgPet = PETS[currentSkin] || PETS.cat;
+    const ps = PET_STATE[state] || PET_STATE.off;
+    // 猫有专属表情，其余宠物用本体 emoji
+    petFace.textContent = (cfgPet.faces && cfgPet.faces[state]) || cfgPet.emoji;
+    petBadge.textContent = ps.badge;
+    wrap.className = 'orb-wrap ' + ps.anim;
+    pet.style.setProperty('--c', s.color);
+    petGlow.style.setProperty('--c', s.color);
+    petFace.style.setProperty('--c', s.color);
+  }
+  wrap.title = s.label;
+}
+
+function renderMulti() {
+  if (!multiSource || !showSourceRows || !Object.keys(perSource).length) { multiEl.innerHTML = ''; return; }
+  multiEl.innerHTML = Object.entries(perSource).map(([uid, s]) => `
+    <div class="src-row" title="${s.name} · ${(STATES[s.state]||{}).label||s.state}${s.hasLog?'':' (日志缺失)'}">
+      <span class="src-dot" style="background:${s.color};color:${s.color}"></span>
+      <span class="src-name">${s.icon||''} ${s.name}</span>
+    </div>
+  `).join('');
+}
+
+function renderMini() {
+  if (!showMini) { mini.innerHTML = ''; return; }
+  const fmt = ms => {
+    const m = Math.floor(ms/60000);
+    return m >= 60 ? `${Math.floor(m/60)}h${m%60}m` : `${m}m`;
+  };
+  mini.innerHTML = `
+    <div class="mini-row">
+      <span class="mini-dot" style="background:#f59e0b"></span>
+      <span style="color:#aaa;font-size:9px">工作</span>
+      <span class="mini-val">${fmt(statsData.workingMs)}</span>
+    </div>
+    <div class="mini-row">
+      <span class="mini-dot" style="background:#ef4444"></span>
+      <span style="color:#aaa;font-size:9px">决策</span>
+      <span class="mini-val">${statsData.decisionCount}</span>
+    </div>
+    <div class="mini-row">
+      <span class="mini-dot" style="background:#3b82f6"></span>
+      <span style="color:#aaa;font-size:9px">完成</span>
+      <span class="mini-val">${statsData.taskCount}</span>
+    </div>
+    <div class="mini-row">
+      <span class="mini-dot" style="background:#22c55e"></span>
+      <span style="color:#aaa;font-size:9px">空闲</span>
+      <span class="mini-val">${fmt(statsData.idleMs)}</span>
+    </div>
+  `;
+}
+
+ipcRenderer.on('state-change', (_, d) => {
+  Object.assign(STATES, d.states);
+  currentState = d.state;
+  multiSource  = !!d.multiSource;
+  showSourceRows = d.showSourceRows !== false;
+  perSource    = d.perSource || {};
+  applyState(d.state, d.states);
+  renderMulti();
+});
+
+ipcRenderer.on('stats-data', (_, d) => {
+  statsData = d.stats;
+  renderMini();
+});
+
+ipcRenderer.on('config-data', (_, c) => {
+  showMini = c.showMiniStats !== false;
+  showSourceRows = c.showSourceRows !== false;
+  jumpOnDecision = c.jumpOnDecision !== false;
+  multiSource = (c.sources || []).filter(s => s.enabled).length > 1;
+  const nextSkin = c.skin || 'orb';
+  if (nextSkin !== currentSkin) {
+    currentSkin = nextSkin;
+    if (Object.keys(STATES).length) applyState(currentState, STATES);
+  }
+  renderMini();
+  renderMulti();
+});
+
+// ─── 拖拽 + 点击 ───────────────────────────────────────────────────────────────
+// 用 mousedown/mousemove/mouseup 自己实现拖拽，窗口不设 app-region:drag
+// 这样点击事件才能正常触发
+wrap.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  isDragging = false;
+  dragStart = { x: e.screenX, y: e.screenY };
+  ipcRenderer.send('drag-start');
+});
+
+wrap.addEventListener('mousemove', e => {
+  if (!dragStart) return;
+  const dx = Math.abs(e.screenX - dragStart.x);
+  const dy = Math.abs(e.screenY - dragStart.y);
+  if (dx > 4 || dy > 4) {
+    isDragging = true;
+    ipcRenderer.send('drag-move', { x: e.screenX, y: e.screenY });
+  }
+});
+
+wrap.addEventListener('mouseup', e => {
+  if (e.button !== 0) return;
+  const wasDragging = isDragging;
+  isDragging = false;
+  dragStart = null;
+  if (!wasDragging) {
+    // decision 状态单击 → 直接跳转到 AI 应用；其他状态 → 切换面板
+    if (currentState === 'decision' && jumpOnDecision) {
+      ipcRenderer.send('jump-to-app');
+    } else {
+      ipcRenderer.send('toggle-panel');
+    }
+  }
+});
+
+// 右键菜单
+wrap.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  ipcRenderer.send('show-float-menu');
+});
+
+// 初始请求
+ipcRenderer.send('get-state');
+ipcRenderer.send('get-config');
+
+// 每5秒刷新统计
+setInterval(() => ipcRenderer.send('get-stats'), 5000);
+ipcRenderer.send('get-stats');
+</script>
+</body>
+</html>

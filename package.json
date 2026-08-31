@@ -1,0 +1,88 @@
+{
+  "name": "jaslight",
+  "version": "2.0.1",
+  "description": "JasLight - Universal AI work signal light. Monitor any AI agent status at a glance.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --mac --x64"
+  },
+  "build": {
+    "appId": "com.jaslight.app",
+    "productName": "JasLight",
+    "files": [
+      "src/**/*",
+      "assets/icon.icns",
+      "assets/icon.ico",
+      "assets/icon-source.png"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "category": "public.app-category.utilities",
+      "icon": "assets/icon.icns",
+      "minimumSystemVersion": "11.0.0",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "extendInfo": {
+        "LSUIElement": true,
+        "NSHighResolutionCapable": true
+      }
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "JasLight"
+    },
+    "dmg": {
+      "title": "JasLight ${version}",
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    }
+  },
+  "devDependencies": {
+    "electron": "^36.4.0",
+    "electron-builder": "^26.0.12"
+  },
+  "author": {
+    "name": "jasperliu2026ai"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/jasperliu2026ai/jaslight"
+}

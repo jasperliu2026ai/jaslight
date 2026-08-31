@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JasLight — 通用 AI 工作信号灯</title>
+<meta name="description" content="一眼看清任何 AI Agent 在干什么。支持 Claude Code、Cursor、Codex、Trae、CodeBuddy、Copilot 等 10 种主流工具，也可完全自定义。">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="mask-icon" href="icon.svg" color="#6edcff">
+<meta property="og:title" content="JasLight — 通用 AI 工作信号灯">
+<meta property="og:description" content="一眼看清任何 AI Agent 在干什么。支持 Claude Code、Cursor、Codex、Trae、CodeBuddy 等 10 种主流工具，也可完全自定义。">
+<meta property="og:image" content="https://jasperliu2026ai.github.io/jaslight/og-image.png">
+<meta property="og:url" content="https://jasperliu2026ai.github.io/jaslight/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#070810">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#070810; --bg2:#0c0e18; --card:rgba(255,255,255,.045);
+    --border:rgba(255,255,255,.09); --tx:#e8edf7; --tx2:#94a3b8; --tx3:#5b6478;
+    --cyan:#6edcff; --violet:#8b5cf6; --amber:#f59e0b; --red:#ef4444;
+    --green:#22c55e; --blue:#3b82f6; --purple:#a855f7;
+  }
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg); color:var(--tx); overflow-x:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+    line-height:1.65; -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+  /* ── 顶栏 ── */
+  header{
+    position:fixed;top:0;left:0;right:0;z-index:100;height:60px;
+    backdrop-filter:blur(18px);background:rgba(7,8,16,.78);
+    border-bottom:1px solid var(--border);
+  }
+  header .wrap{height:100%;display:flex;align-items:center;gap:16px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px}
+  .logo .lg-icon{width:30px;height:30px;display:block}
+  nav{margin-left:auto;display:flex;align-items:center;gap:22px}
+  nav a{font-size:13.5px;color:var(--tx2);transition:.2s}
+  nav a:hover{color:var(--tx)}
+  .btn{
+    display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:9px;
+    font-size:13.5px;font-weight:600;cursor:pointer;border:1px solid var(--border);
+    background:var(--card);color:var(--tx);transition:.2s;white-space:nowrap;
+  }
+  .btn:hover{background:rgba(255,255,255,.11);transform:translateY(-1px)}
+  .btn.primary{
+    background:linear-gradient(135deg,var(--cyan),var(--violet));
+    border:none;color:#fff;box-shadow:0 4px 20px rgba(110,220,255,.22);
+  }
+  .btn.primary:hover{box-shadow:0 6px 28px rgba(110,220,255,.34)}
+  .btn.sm{padding:6px 13px;font-size:12px}
+  #langBtn{padding:5px 11px;font-size:12px;border-radius:7px}
+  .burger{display:none;background:none;border:none;color:var(--tx);font-size:20px;cursor:pointer}
+
+  /* ── Hero ── */
+  .hero{padding:150px 0 90px;position:relative;overflow:hidden}
+  .hero::before{
+    content:'';position:absolute;top:-30%;left:50%;transform:translateX(-50%);
+    width:900px;height:900px;pointer-events:none;
+    background:radial-gradient(circle,rgba(110,220,255,.13) 0%,rgba(139,92,246,.09) 38%,transparent 66%);
+  }
+  .hero-in{position:relative;display:grid;grid-template-columns:1.15fr .85fr;gap:50px;align-items:center}
+  .badge{
+    display:inline-flex;align-items:center;gap:7px;padding:5px 13px;border-radius:99px;
+    background:rgba(110,220,255,.11);border:1px solid rgba(110,220,255,.26);
+    font-size:12px;color:var(--cyan);margin-bottom:22px;
+  }
+  h1{
+    font-size:clamp(34px,5.2vw,58px);line-height:1.12;font-weight:800;letter-spacing:-1.4px;
+    background:linear-gradient(135deg,#fff 20%,var(--cyan) 62%,var(--violet) 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    margin-bottom:20px;
+  }
+  .lead{font-size:17px;color:var(--tx2);margin-bottom:30px;max-width:520px}
+  .lead b{color:var(--tx);font-weight:600}
+  .cta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .cta-sub{font-size:12.5px;color:var(--tx3)}
+
+  /* ── Hero 演示 ── */
+  .demo{
+    background:linear-gradient(150deg,#101425,#0a0c16);
+    border:1px solid var(--border);border-radius:20px;padding:26px 22px;
+    box-shadow:0 24px 70px rgba(0,0,0,.5);
+  }
+  .demo-title{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:20px;text-align:center}
+  .orb-stage{display:flex;justify-content:center;padding:14px 0 22px}
+
+  /* 光球：完全复刻 App 图标质感（CSS 球体，非位图） */
+  .orb{
+    width:76px;height:76px;border-radius:50%;position:relative;flex-shrink:0;
+    background:
+      radial-gradient(circle at 32% 28%, rgba(255,255,255,.92) 0%, rgba(255,255,255,0) 26%),
+      radial-gradient(circle at 38% 33%, color-mix(in srgb, var(--c) 55%, #fff) 0%, var(--c) 58%),
+      radial-gradient(circle at 50% 120%, rgba(0,0,0,.32) 0%, rgba(0,0,0,0) 52%);
+    box-shadow:
+      0 0 22px 4px color-mix(in srgb, var(--c) 70%, transparent),
+      0 0 60px 16px color-mix(in srgb, var(--c) 26%, transparent),
+      inset 0 -9px 18px rgba(0,0,0,.35),
+      inset 0 4px 9px rgba(255,255,255,.28);
+    animation:breathe 2.6s ease-in-out infinite;
+    transition:background .5s;
+  }
+  /* 状态切换时球体渐变底层颜色平滑过渡：用 ::before 做颜色层 */
+  .orb::before{
+    content:'';position:absolute;inset:0;border-radius:50%;
+    background:radial-gradient(circle at 38% 33%, color-mix(in srgb, var(--c) 55%, #fff) 0%, var(--c) 58%);
+    transition:background .5s;
+  }
+  @keyframes breathe{
+    0%,100%{transform:scale(1)}
+    50%{transform:scale(1.07)}
+  }
+  @keyframes blink{
+    0%,45%,55%,100%{opacity:1}
+    48%,52%{opacity:.2}
+  }
+  .orb[data-anim="blink"]{animation:blink 1s linear infinite}
+  .orb[data-anim="slow"]{animation:breathe 3.4s ease-in-out infinite}
+
+  /* ── 皮肤切换器 ── */
+  .skin-bar{
+    display:flex;align-items:center;gap:5px;justify-content:center;
+    padding:8px;background:rgba(255,255,255,.045);border:1px solid var(--border);
+    border-radius:11px;margin-bottom:14px;
+  }
+  .skin-btn{
+    width:36px;height:36px;border-radius:9px;border:1px solid transparent;
+    background:rgba(255,255,255,.05);cursor:pointer;font-size:18px;line-height:1;
+    display:flex;align-items:center;justify-content:center;transition:.18s;position:relative;
+  }
+  .skin-btn:hover{background:rgba(255,255,255,.12);transform:translateY(-1px)}
+  .skin-btn.on{
+    background:rgba(110,220,255,.13);border-color:rgba(110,220,255,.45);
+    box-shadow:0 0 12px rgba(110,220,255,.2);
+  }
+  .skin-btn .mini-orb{
+    width:16px;height:16px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, color-mix(in srgb,var(--c) 60%,#fff), var(--c));
+    box-shadow:0 0 7px 2px color-mix(in srgb,var(--c) 65%,transparent);
+  }
+
+  /* 宠物形态（与 App float.html 一致） */
+  .pet-stage{display:flex;justify-content:center;padding:14px 0 22px;position:relative;height:76px;align-items:center}
+  .pet{
+    font-size:46px;line-height:1;position:relative;
+    filter:drop-shadow(0 0 8px color-mix(in srgb,var(--c) 75%,transparent));
+    animation:petIdle 2.8s ease-in-out infinite;
+  }
+  .pet-badge{
+    position:absolute;right:-9px;top:-5px;font-size:15px;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));
+    animation:badgePulse .75s ease-in-out infinite;
+  }
+  @keyframes petIdle{
+    0%,100%{transform:scale(1) translateY(0)}
+    50%{transform:scale(1.06) translateY(-2px)}
+  }
+  @keyframes petWork{
+    0%,100%{transform:rotate(-7deg) scaleY(1) scaleX(1) translateY(0)}
+    25%{transform:rotate(0deg) scaleY(.92) scaleX(1.07) translateY(2px)}
+    50%{transform:rotate(7deg) scaleY(1.06) scaleX(.95) translateY(-3px)}
+    75%{transform:rotate(0deg) scaleY(.94) scaleX(1.05) translateY(1px)}
+  }
+  @keyframes petAlert{
+    0%,100%{transform:translateY(0) scaleY(1) scaleX(1)}
+    18%{transform:translateY(1px) scaleY(.86) scaleX(1.14)}
+    45%{transform:translateY(-6px) scaleY(1.1) scaleX(.93)}
+    72%{transform:translateY(0) scaleY(.94) scaleX(1.05)}
+  }
+  @keyframes petHappy{
+    0%,100%{transform:translateY(0) rotate(0deg) scale(1)}
+    25%{transform:translateY(-5px) rotate(-11deg) scale(1.08)}
+    50%{transform:translateY(0) rotate(0deg) scale(1)}
+    75%{transform:translateY(-4px) rotate(11deg) scale(1.06)}
+  }
+  @keyframes petShake{
+    0%,100%{transform:translateX(0) rotate(0)}
+    25%{transform:translateX(-3px) rotate(-3deg)}
+    75%{transform:translateX(3px) rotate(3deg)}
+  }
+  @keyframes petSleep{
+    0%,100%{transform:rotate(-5deg) scale(.94)}
+    50%{transform:rotate(5deg) scale(.94)}
+  }
+  @keyframes badgePulse{
+    0%,100%{transform:scale(1);opacity:1}
+    50%{transform:scale(1.3);opacity:.65}
+  }
+  .pet[data-anim="work"]{animation:petWork 1.1s ease-in-out infinite}
+  .pet[data-anim="alert"]{animation:petAlert .9s ease-in-out infinite}
+  .pet[data-anim="happy"]{animation:petHappy 1.3s ease-in-out infinite}
+  .pet[data-anim="shake"]{animation:petShake .7s ease-in-out infinite}
+  .pet[data-anim="sleep"]{animation:petSleep 3.4s ease-in-out infinite}
+  .skin-name{
+    font-size:10.5px;color:var(--tx3);text-align:center;margin-top:9px;height:14px;
+  }
+  .state-list{display:flex;flex-direction:column;gap:7px}
+  .state-row{
+    display:flex;align-items:center;gap:11px;padding:9px 13px;border-radius:10px;
+    background:rgba(255,255,255,.035);border:1px solid transparent;
+    font-size:12.5px;cursor:pointer;transition:.2s;
+  }
+  .state-row:hover{background:rgba(255,255,255,.07)}
+  .state-row.on{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.16)}
+  .sd{width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:0 0 9px currentColor}
+  .sn{flex:1;color:var(--tx)}
+  .sm{font-size:11px;color:var(--tx3)}
+
+  /* ── 通用 section ── */
+  section{padding:86px 0}
+  .sec-head{text-align:center;margin-bottom:52px}
+  .sec-tag{font-size:11.5px;color:var(--cyan);text-transform:uppercase;letter-spacing:1.3px;font-weight:600;margin-bottom:11px}
+  .sec-head h2{font-size:clamp(26px,3.6vw,38px);font-weight:750;letter-spacing:-.7px;margin-bottom:13px}
+  .sec-head p{color:var(--tx2);font-size:15px;max-width:620px;margin:0 auto}
+
+  /* ── 特性网格 ── */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(275px,1fr));gap:18px}
+  .card{
+    background:var(--card);border:1px solid var(--border);border-radius:15px;padding:24px;
+    transition:.24s;position:relative;overflow:hidden;
+  }
+  .card:hover{transform:translateY(-3px);border-color:rgba(110,220,255,.3);background:rgba(255,255,255,.065)}
+  .card .ic{font-size:26px;margin-bottom:13px;display:block}
+  .card h3{font-size:15.5px;font-weight:650;margin-bottom:8px}
+  .card p{font-size:13px;color:var(--tx2);line-height:1.68}
+
+  /* ── 下载 ── */
+  .dl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));gap:16px}
+  .dl{
+    background:var(--card);border:1px solid var(--border);border-radius:15px;
+    padding:24px 22px;text-align:center;transition:.24s;display:block;
+  }
+  .dl:hover{transform:translateY(-3px);border-color:rgba(110,220,255,.4);background:rgba(110,220,255,.05)}
+  .dl .os{height:44px;display:flex;align-items:center;justify-content:center;margin-bottom:11px}
+  .dl .os svg{height:40px;width:auto}
+  .dl .os svg path, .dl .os svg rect{fill:#e8edf7}
+  .dl h4{font-size:15px;font-weight:650;margin-bottom:5px}
+  .dl .arch{font-size:11.5px;color:var(--tx3);margin-bottom:15px;min-height:17px}
+  .dl .go{
+    display:inline-block;padding:8px 20px;border-radius:8px;font-size:12.5px;font-weight:600;
+    background:linear-gradient(135deg,var(--cyan),var(--violet));color:#fff;
+  }
+  .dl .rec{
+    position:absolute;top:11px;right:11px;font-size:9.5px;padding:2px 8px;border-radius:99px;
+    background:rgba(34,197,94,.2);color:#86efac;border:1px solid rgba(34,197,94,.34);
+  }
+  .dl{position:relative}
+
+  /* ── 支持的工具 ── */
+  .tools{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:860px;margin:0 auto}
+  .tool{
+    display:flex;align-items:center;gap:9px;padding:10px 17px;border-radius:11px;
+    background:var(--card);border:1px solid var(--border);font-size:13px;transition:.2s;
+  }
+  .tool:hover{border-color:rgba(110,220,255,.35);background:rgba(110,220,255,.06);transform:translateY(-2px)}
+  .tool .e{font-size:16px}
+  .tool svg{width:17px;height:17px;flex-shrink:0;display:block}
+  .tool .plus{color:var(--cyan);font-weight:700}
+
+  /* ── 配置步骤 ── */
+  .steps{display:flex;flex-direction:column;gap:16px;max-width:800px;margin:0 auto}
+  .step{
+    display:flex;gap:18px;padding:22px;background:var(--card);
+    border:1px solid var(--border);border-radius:15px;
+  }
+  .step-n{
+    width:34px;height:34px;border-radius:10px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14.5px;
+    background:linear-gradient(135deg,var(--cyan),var(--violet));color:#fff;
+  }
+  .step-b h4{font-size:15px;font-weight:650;margin-bottom:7px}
+  .step-b p{font-size:13.5px;color:var(--tx2);margin-bottom:9px}
+  .step-b p:last-child{margin-bottom:0}
+  code{
+    background:rgba(110,220,255,.1);padding:2px 6px;border-radius:5px;
+    font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:11.5px;color:var(--cyan);
+  }
+  pre{
+    background:#0a0c15;border:1px solid var(--border);border-radius:10px;
+    padding:14px 16px;overflow-x:auto;margin:9px 0;
+  }
+  pre code{background:none;padding:0;color:#a5b4cb;font-size:11.5px;line-height:1.75;display:block}
+
+  /* 占位符表 */
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin:9px 0}
+  th{
+    text-align:left;padding:8px 11px;color:var(--tx3);font-weight:600;font-size:11px;
+    border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px;
+  }
+  td{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,.045);color:var(--tx2);vertical-align:top}
+  td:first-child{white-space:nowrap}
+
+  /* ── 隐私 ── */
+  .privacy{
+    background:linear-gradient(135deg,rgba(34,197,94,.07),rgba(59,130,246,.05));
+    border:1px solid rgba(34,197,94,.19);border-radius:17px;padding:34px;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:22px;
+  }
+  .pv{display:flex;gap:11px;align-items:flex-start}
+  .pv .ck{color:#86efac;font-size:16px;flex-shrink:0;line-height:1.4}
+  .pv h4{font-size:13.5px;font-weight:650;margin-bottom:4px}
+  .pv p{font-size:12.5px;color:var(--tx2)}
+
+  /* ── Footer ── */
+  footer{border-top:1px solid var(--border);padding:40px 0;margin-top:34px}
+  .foot{display:flex;justify-content:space-between;align-items:center;gap:22px;flex-wrap:wrap}
+  .foot-l{display:flex;align-items:center;gap:11px;font-size:13px;color:var(--tx2)}
+  .foot-l img{width:24px;height:24px;border-radius:6px}
+  .foot-r{display:flex;gap:20px;font-size:12.5px;color:var(--tx3)}
+  .foot-r a:hover{color:var(--tx)}
+
+  /* ── 响应式 ── */
+  @media (max-width:880px){
+    .hero-in{grid-template-columns:1fr;gap:38px}
+    .demo{max-width:400px;margin:0 auto}
+    nav a:not(.keep){display:none}
+    .hero{padding:120px 0 66px}
+    section{padding:62px 0}
+  }
+  @media (max-width:520px){
+    .privacy{padding:24px}
+    .step{flex-direction:column;gap:12px}
+    .foot{flex-direction:column;text-align:center}
+  }
+
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a href="#" class="logo">
+      <svg class="lg-icon" viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="lbg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#1a1430"/><stop offset="1" stop-color="#0c1c34"/>
+          </linearGradient>
+          <linearGradient id="lsph" x1="24" y1="14" x2="40" y2="52" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#6edcff"/><stop offset="1" stop-color="#8046dc"/>
+          </linearGradient>
+          <radialGradient id="lhl" cx="0.36" cy="0.3" r="0.5">
+            <stop offset="0" stop-color="#fff" stop-opacity="0.95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="64" height="64" rx="14" fill="url(#lbg)"/>
+        <circle cx="32" cy="32" r="14.5" fill="#5aa8ff" opacity="0.16"/>
+        <circle cx="32" cy="32" r="12.5" fill="url(#lsph)"/>
+        <ellipse cx="27.5" cy="26.5" rx="7" ry="5" fill="url(#lhl)" transform="rotate(-24 27.5 26.5)"/>
+      </svg>
+      <span>JasLight</span>
+    </a>
+    <nav>
+      <a href="#features" data-i="navFeat">特性</a>
+      <a href="#tools" data-i="navTools">支持工具</a>
+      <a href="#config" data-i="navConfig">配置</a>
+      <a href="#download" data-i="navDl">下载</a>
+      <button class="btn sm" id="langBtn">EN</button>
+      <a class="btn sm primary keep" href="https://github.com/jasperliu2026ai/jaslight" target="_blank">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ══ HERO ══ -->
+<div class="hero">
+  <div class="wrap hero-in">
+    <div>
+      <div class="badge"><span>✨</span><span data-i="badge">v2.0 · 支持 10 种 AI 工具 + 完全自定义</span></div>
+      <h1 data-i="h1">一眼看清<br>AI 在干什么</h1>
+      <p class="lead" data-i="lead">
+        常驻桌面的小信号灯，读取 AI 工具的日志判断状态。<b>工作中</b>、<b>等你决策</b>、<b>已完成</b>、<b>卡住了</b> —— 用颜色和动画告诉你，再也不用反复切窗口确认。
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="#download"><span>⬇</span><span data-i="ctaDl">免费下载</span></a>
+        <a class="btn" href="https://github.com/jasperliu2026ai/jaslight" target="_blank"><span>★</span><span data-i="ctaStar">GitHub 开源</span></a>
+      </div>
+      <div class="cta-sub" data-i="ctaSub">macOS (Intel / Apple 芯片) · Windows · 零网络请求 · MIT 协议</div>
+    </div>
+
+    <div class="demo">
+      <div class="demo-title" data-i="demoTitle">点击切换状态预览</div>
+      <div class="skin-bar" id="skinBar"></div>
+      <div class="orb-stage" id="orbStage">
+        <div class="orb" id="orb" style="--c:#f59e0b" data-anim=""></div>
+      </div>
+      <div class="pet-stage" id="petStage" style="display:none">
+        <div class="pet" id="pet" style="--c:#f59e0b" data-anim="">🐱<span class="pet-badge" id="petBadge"></span></div>
+      </div>
+      <div class="skin-name" id="skinName"></div>
+      <div class="state-list" id="stateList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 特性 ══ -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-tag" data-i="featTag">Features</div>
+      <h2 data-i="featH">不只是一个灯</h2>
+      <p data-i="featP">从状态提示到工时统计，把「AI 在忙什么」变成可量化的数据</p>
+    </div>
+    <div class="grid" id="featGrid"></div>
+  </div>
+</section>
+
+<!-- ══ 支持的工具 ══ -->
+<section id="tools" style="background:var(--bg2)">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-tag" data-i="toolsTag">Compatibility</div>
+      <h2 data-i="toolsH">开箱支持 10 种主流 AI 工具</h2>
+      <p data-i="toolsP">内置模板一键启用；没列出的工具，也能通过自定义日志路径和正则规则接入 —— 只要它会写日志</p>
+    </div>
+    <div class="tools" id="toolList"></div>
+  </div>
+</section>
+
+<!-- ══ 配置说明 ══ -->
+<section id="config">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-tag" data-i="cfgTag">Setup</div>
+      <h2 data-i="cfgH">三步配置监控源</h2>
+      <p data-i="cfgP">JasLight 靠读日志工作，所以要先告诉它日志在哪</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div class="step-b">
+          <h4 data-i="s1h">🔍 自动探测（最快）</h4>
+          <p data-i="s1p1">打开 <b>偏好设置 → 监控源 → 自动探测本机 AI 工具</b>，它会扫描常见路径，列出所有找到日志的工具，点击即添加。首次启动时也会自动跑一次。</p>
+          <p data-i="s1p2">如果你的工具被探测到了，到这一步就结束了。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">2</div>
+        <div class="step-b">
+          <h4 data-i="s2h">📋 从模板添加</h4>
+          <p data-i="s2p1">在 <b>从模板添加</b> 区域点击工具名（Claude Code / Cursor / Codex / Trae / CodeBuddy …），会添加一份预置配置。</p>
+          <p data-i="s2p2">添加后展开卡片，点 <b>测试路径</b> 验证 —— 会显示实际解析到的文件、大小和修改时间。路径不对就手动改。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">3</div>
+        <div class="step-b">
+          <h4 data-i="s3h">⚙️ 完全自定义（任意工具）</h4>
+          <p data-i="s3p1">选 <b>自定义源</b> 模板，填四项：<b>日志路径</b>、<b>进程名</b>、<b>应用名</b>、<b>四条状态正则</b>。</p>
+          <p data-i="s3p2"><b>路径占位符：</b></p>
+          <table>
+            <thead><tr>
+              <th data-i="thPh">占位符</th><th data-i="thMean">含义</th><th data-i="thEg">例子</th>
+            </tr></thead>
+            <tbody id="phBody"></tbody>
+          </table>
+          <p data-i="s3p3"><b>找日志特征的方法：</b>一边用 AI，一边跟踪日志，记下四个时刻打印了什么 —— 你发消息时、AI 调工具时、弹出「允许」时、回复结束时。</p>
+          <pre><code># macOS / Linux
+tail -f "路径/到/日志.log"
+
+# Windows PowerShell
+Get-Content "路径\到\日志.log" -Wait -Tail 20</code></pre>
+          <p data-i="s3p4">多个候选词用 <code>|</code> 分隔，例如 <code>tool_call|function_call|invoke_tool</code>。不确定就先用默认的通用规则 —— 对大多数 Agent 工具能覆盖 60% 以上状态。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 下载 ══ -->
+<section id="download" style="background:var(--bg2)">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-tag" data-i="dlTag">Download</div>
+      <h2 data-i="dlH">选择你的平台</h2>
+      <p data-i="dlP">v2.0.1 · 免费开源 · 无需注册</p>
+    </div>
+    <div class="dl-grid" id="dlGrid"></div>
+    <div style="margin-top:26px;font-size:12.5px;color:var(--tx3);text-align:center;line-height:1.9">
+      <div data-i="dlNote1">💡 macOS 提示「已损坏」→ 终端执行 <code>sudo xattr -rd com.apple.quarantine /Applications/JasLight.app</code></div>
+      <div data-i="dlNote2">💡 Windows 提示「已保护你的电脑」→ 点「更多信息 → 仍要运行」（未购买代码签名证书所致）</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 隐私 ══ -->
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-tag" data-i="pvTag">Privacy</div>
+      <h2 data-i="pvH">你的对话内容，它一个字都读不到</h2>
+    </div>
+    <div class="privacy" id="pvGrid"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <div class="foot-l">
+      <svg width="24" height="24" viewBox="0 0 64 64" aria-hidden="true" style="border-radius:6px">
+        <rect width="64" height="64" rx="14" fill="#1a1430"/>
+        <defs>
+          <linearGradient id="fsph" x1="24" y1="14" x2="40" y2="52" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#6edcff"/><stop offset="1" stop-color="#8046dc"/>
+          </linearGradient>
+        </defs>
+        <circle cx="32" cy="32" r="12.5" fill="url(#fsph)"/>
+        <circle cx="27.5" cy="26.5" r="4.5" fill="#fff" opacity="0.75"/>
+      </svg>
+      <span>JasLight · <span data-i="footTag">通用 AI 工作信号灯</span></span>
+    </div>
+    <div class="foot-r">
+      <a href="https://github.com/jasperliu2026ai/jaslight" target="_blank">GitHub</a>
+      <a href="https://github.com/jasperliu2026ai/jaslight/releases" target="_blank" data-i="footRel">Releases</a>
+      <a href="https://github.com/jasperliu2026ai/jaslight/issues" target="_blank" data-i="footIss">反馈</a>
+      <span>MIT License</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const REPO = 'https://github.com/jasperliu2026ai/jaslight';
+const REL  = REPO + '/releases/download/v2.0.1/';
+
+const DATA = {
+  zh: {
+    navFeat:'特性', navTools:'支持工具', navConfig:'配置', navDl:'下载',
+    badge:'v2.0.1 · 支持 10 种 AI 工具 + 完全自定义',
+    h1:'一眼看清<br>AI 在干什么',
+    lead:'常驻桌面的小信号灯，读取 AI 工具的日志判断状态。<b>工作中</b>、<b>等你决策</b>、<b>已完成</b>、<b>卡住了</b> —— 用颜色和动画告诉你，再也不用反复切窗口确认。',
+    ctaDl:'免费下载', ctaStar:'GitHub 开源',
+    ctaSub:'macOS (Intel / Apple 芯片) · Windows · 零网络请求 · MIT 协议',
+    demoTitle:'点击切换状态预览',
+    states:[
+      ['idle','#22c55e','AI空闲','在等你输入'],
+      ['working','#f59e0b','工作中','正在调用工具 / 生成内容'],
+      ['decision','#ef4444','请你决策','等你点确认，会响铃提醒'],
+      ['done','#3b82f6','已完成','本轮任务结束'],
+      ['stuck','#a855f7','疑似卡住','长时间无新日志'],
+      ['off','#6b7280','未监控','应用没运行 / 日志找不到'],
+    ],
+    featTag:'Features', featH:'不只是一个灯',
+    featP:'从状态提示到工时统计，把「AI 在忙什么」变成可量化的数据',
+    feats:[
+      ['🔌','通用适配任意 AI','内置 12 种主流工具模板，也能完全自定义日志路径与匹配规则 —— 只要那个工具会写日志，就能接入。'],
+      ['🔍','一键自动探测','扫描本机已安装的 AI 工具，自动找到日志路径并配置好，通常不用手填任何东西。'],
+      ['📊','多源同时监控','同时盯多个 AI。悬浮灯显示最紧急的那个状态，下方逐行列出每个源各自的颜色。'],
+      ['🐱','11 种皮肤','光球 + 10 种宠物（猫狗企鹅熊猫狐狸…）。每种状态有不同表情和动作：工作时摇摆、决策时跳跃、完成时开心转身。'],
+      ['🔔','声音提示','需要决策时响铃，比系统通知更难被忽略。8 种系统音可选，可单独关闭。'],
+      ['🎯','一键跳转','红灯时点一下悬浮灯，直接把对应 AI 应用拉到前台，不用手动找窗口。'],
+      ['📈','工时报表','今日概览、24 小时状态色带（像 Screen Time 那样）、近 7 天柱状图、60 天明细、CSV 导出。'],
+      ['🍅','番茄钟联动','只在 AI 真正工作/等你决策时累计专注时长，完成一个番茄自动提醒休息。'],
+      ['⌨️','快捷键 + 自启','全局热键随时唤出面板，可设开机静默自启，配置支持导出导入。'],
+    ],
+    toolsTag:'Compatibility', toolsH:'开箱支持 10 种主流 AI 工具',
+    toolsP:'内置模板一键启用；没列出的工具，也能通过自定义日志路径和正则规则接入 —— 只要它会写日志',
+    tools:[
+      ['codebuddy','CodeBuddy'],['workbuddy','WorkBuddy'],['trae','Trae'],
+      ['claude','Claude Code'],['codex','Codex (ChatGPT CLI)'],['kimi','Kimi Code'],
+      ['cursor','Cursor'],['windsurf','Windsurf'],['copilot','GitHub Copilot'],
+      ['gemini','Gemini CLI'],['custom','自定义任意工具'],
+    ],
+    cfgTag:'Setup', cfgH:'三步配置监控源', cfgP:'JasLight 靠读日志工作，所以要先告诉它日志在哪',
+    s1h:'🔍 自动探测（最快）',
+    s1p1:'打开 <b>偏好设置 → 监控源 → 自动探测本机 AI 工具</b>，它会扫描常见路径，列出所有找到日志的工具，点击即添加。首次启动时也会自动跑一次。',
+    s1p2:'如果你的工具被探测到了，到这一步就结束了。',
+    s2h:'📋 从模板添加',
+    s2p1:'在 <b>从模板添加</b> 区域点击工具名（Claude Code / Cursor / Codex / Trae / CodeBuddy …），会添加一份预置配置。',
+    s2p2:'添加后展开卡片，点 <b>测试路径</b> 验证 —— 会显示实际解析到的文件、大小和修改时间。路径不对就手动改。',
+    s3h:'⚙️ 完全自定义（任意工具）',
+    s3p1:'选 <b>自定义源</b> 模板，填四项：<b>日志路径</b>、<b>进程名</b>、<b>应用名</b>、<b>四条状态正则</b>。',
+    s3p2:'<b>路径占位符：</b>',
+    s3p3:'<b>找日志特征的方法：</b>一边用 AI，一边跟踪日志，记下四个时刻打印了什么 —— 你发消息时、AI 调工具时、弹出「允许」时、回复结束时。',
+    s3p4:'多个候选词用 <code>|</code> 分隔，例如 <code>tool_call|function_call|invoke_tool</code>。不确定就先用默认的通用规则 —— 对大多数 Agent 工具能覆盖 60% 以上状态。',
+    thPh:'占位符', thMean:'含义', thEg:'例子',
+    placeholders:[
+      ['{DATE}','当天日期 2026-08-31','app.{DATE}.log'],
+      ['{LATEST}','目录内最新的 .log / .jsonl','logs/{LATEST}'],
+      ['{LATEST_DIR}','最新的子目录','logs/{LATEST_DIR}/main.log'],
+      ['*','通配符（取最新匹配项）','logs/session-*.log'],
+      ['~','用户主目录','~/.claude/logs/{LATEST}'],
+      ['%APPDATA%','Windows 环境变量','%APPDATA%\\App\\logs\\{LATEST}'],
+    ],
+    dlTag:'Download', dlH:'选择你的平台', dlP:'v2.0.1 · 免费开源 · 无需注册',
+    downloads:[
+      ['apple','macOS Apple 芯片','M1 / M2 / M3 / M4','JasLight-2.0.1-arm64.dmg','下载 DMG',true],
+      ['apple','macOS Intel','macOS 11 或更高','JasLight-2.0.1.dmg','下载 DMG',false],
+      ['win','Windows 安装版','可自选安装路径','JasLight.Setup.2.0.1.exe','下载安装包',false],
+      ['win','Windows 免安装','单文件绿色版','JasLight.2.0.1.exe','下载便携版',false],
+    ],
+    dlNote1:'💡 macOS 提示「已损坏」→ 终端执行 <code>sudo xattr -rd com.apple.quarantine /Applications/JasLight.app</code>',
+    dlNote2:'💡 Windows 提示「已保护你的电脑」→ 点「更多信息 → 仍要运行」（未购买代码签名证书所致）',
+    pvTag:'Privacy', pvH:'你的对话内容，它一个字都读不到',
+    privacy:[
+      ['完全本地运行','没有任何网络请求，不需要 API Key，不需要登录注册。'],
+      ['只做正则匹配','逐行匹配日志里的状态关键词，不解析、不存储、不上传任何对话内容。'],
+      ['数据留在本机','统计只有时长和次数，存在本地 JSON 文件里，保留 60 天。'],
+      ['源码完全开放','MIT 协议，可自行审计代码、自行构建，随时确认它在做什么。'],
+    ],
+    footTag:'通用 AI 工作信号灯', footRel:'Releases', footIss:'反馈',
+  },
+  en: {
+    navFeat:'Features', navTools:'Compatibility', navConfig:'Setup', navDl:'Download',
+    badge:'v2.0.1 · 10 AI tools supported + fully custom',
+    h1:'See what your<br>AI is doing',
+    lead:'A tiny always-on-top signal light that reads AI tool logs to detect status. <b>Working</b>, <b>needs you</b>, <b>done</b>, <b>stuck</b> — told through color and motion, so you stop switching windows to check.',
+    ctaDl:'Free Download', ctaStar:'Open Source',
+    ctaSub:'macOS (Intel / Apple Silicon) · Windows · Zero network calls · MIT',
+    demoTitle:'Click to preview states',
+    states:[
+      ['idle','#22c55e','Idle','Waiting for your input'],
+      ['working','#f59e0b','Working','Calling tools / generating'],
+      ['decision','#ef4444','Needs you','Waiting for approval, rings a sound'],
+      ['done','#3b82f6','Done','Turn completed'],
+      ['stuck','#a855f7','Stuck','No new log lines for a while'],
+      ['off','#6b7280','Offline','App not running / log not found'],
+    ],
+    featTag:'Features', featH:'More than just a light',
+    featP:'From status hints to work analytics — turn "what is the AI doing" into measurable data',
+    feats:[
+      ['🔌','Works with any AI','12 built-in presets, plus fully custom log paths and regex rules — if the tool writes logs, you can hook it up.'],
+      ['🔍','One-click auto-detect','Scans your machine for installed AI tools, finds their log paths and configures everything — usually zero typing.'],
+      ['📊','Multi-source monitoring','Watch several AIs at once. The light shows the most urgent state, with per-source rows listed underneath.'],
+      ['🐱','11 skins','Glowing orb + 10 pets (cat, dog, penguin, panda, fox…). Each state has its own expression and motion: swaying while working, hopping on decisions, happy spin when done.'],
+      ['🔔','Sound alerts','Rings when a decision is needed — harder to ignore than a notification. 8 system sounds, individually toggleable.'],
+      ['🎯','One-click jump','Click the red light to bring the corresponding AI app straight to the front. No window hunting.'],
+      ['📈','Work reports','Today overview, 24-hour status band (Screen Time style), 7-day bars, 60-day detail table, CSV export.'],
+      ['🍅','Pomodoro sync','Accumulates focus time only while the AI actually works or waits on you. Auto break reminder per tomato.'],
+      ['⌨️','Hotkeys + autostart','Global hotkeys to summon panels, silent launch at login, and export/import of your whole config.'],
+    ],
+    toolsTag:'Compatibility', toolsH:'10 AI tools supported out of the box',
+    toolsP:'Enable presets with one click. Not listed? Hook it up with a custom log path and regex rules — as long as it writes logs',
+    tools:[
+      ['codebuddy','CodeBuddy'],['workbuddy','WorkBuddy'],['trae','Trae'],
+      ['claude','Claude Code'],['codex','Codex (ChatGPT CLI)'],['kimi','Kimi Code'],
+      ['cursor','Cursor'],['windsurf','Windsurf'],['copilot','GitHub Copilot'],
+      ['gemini','Gemini CLI'],['custom','Any custom tool'],
+    ],
+    cfgTag:'Setup', cfgH:'Configure a source in 3 steps', cfgP:'JasLight works by tailing logs, so it needs to know where they are',
+    s1h:'🔍 Auto-detect (fastest)',
+    s1p1:'Open <b>Preferences → Sources → Auto-detect AI tools</b>. It scans common paths, lists every tool whose logs it finds, and adds them on click. Also runs automatically on first launch.',
+    s1p2:'If your tool shows up here, you are done.',
+    s2h:'📋 Add from preset',
+    s2p1:'In the <b>Add from preset</b> area, click a tool name (Claude Code / Cursor / Codex / Trae / CodeBuddy …) to add a ready-made config.',
+    s2p2:'Expand the card and hit <b>Test path</b> — it shows the resolved file, its size and last-modified time. Fix the path manually if it misses.',
+    s3h:'⚙️ Fully custom (any tool)',
+    s3p1:'Pick the <b>Custom</b> preset and fill four things: <b>log path</b>, <b>process name</b>, <b>app name</b>, and <b>four status regexes</b>.',
+    s3p2:'<b>Path placeholders:</b>',
+    s3p3:'<b>How to find log signatures:</b> tail the log while using the AI, and note what gets printed at four moments — when you send a message, when it calls a tool, when an Allow prompt appears, and when the reply ends.',
+    s3p4:'Separate alternatives with <code>|</code>, e.g. <code>tool_call|function_call|invoke_tool</code>. Unsure? Start with the default generic rules — they cover 60%+ of states for most agent tools.',
+    thPh:'Placeholder', thMean:'Meaning', thEg:'Example',
+    placeholders:[
+      ['{DATE}','Today, 2026-08-31','app.{DATE}.log'],
+      ['{LATEST}','Newest .log / .jsonl in dir','logs/{LATEST}'],
+      ['{LATEST_DIR}','Newest subdirectory','logs/{LATEST_DIR}/main.log'],
+      ['*','Wildcard (newest match wins)','logs/session-*.log'],
+      ['~','Home directory','~/.claude/logs/{LATEST}'],
+      ['%APPDATA%','Windows env var','%APPDATA%\\App\\logs\\{LATEST}'],
+    ],
+    dlTag:'Download', dlH:'Pick your platform', dlP:'v2.0.1 · Free & open source · No signup',
+    downloads:[
+      ['apple','macOS Apple Silicon','M1 / M2 / M3 / M4','JasLight-2.0.1-arm64.dmg','Download DMG',true],
+      ['apple','macOS Intel','macOS 11 or later','JasLight-2.0.1.dmg','Download DMG',false],
+      ['win','Windows Installer','Choose install path','JasLight.Setup.2.0.1.exe','Download Setup',false],
+      ['win','Windows Portable','Single file, no install','JasLight.2.0.1.exe','Download Portable',false],
+    ],
+    dlNote1:'💡 macOS says "damaged"? Run <code>sudo xattr -rd com.apple.quarantine /Applications/JasLight.app</code>',
+    dlNote2:'💡 Windows "protected your PC"? Click "More info → Run anyway" (no paid code-signing cert)',
+    pvTag:'Privacy', pvH:'It cannot read a single word of your conversations',
+    privacy:[
+      ['Fully local','No network requests at all. No API key, no login, no account.'],
+      ['Regex only','Matches status keywords line by line. Never parses, stores or uploads conversation content.'],
+      ['Data stays home','Stats are just durations and counts, kept in a local JSON file for 60 days.'],
+      ['Fully open source','MIT licensed — audit the code and build it yourself any time.'],
+    ],
+    footTag:'Universal AI work signal light', footRel:'Releases', footIss:'Issues',
+  },
+};
+
+let LANG = (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+let activeState = 'working';
+let activeSkin  = 'orb';
+
+// ── 皮肤定义（与 App float.html 的 PETS/PET_STATE 保持一致） ──
+const SKINS = [
+  { id:'orb',     icon:'',          zh:'光球',   en:'Orb'     },
+  { id:'cat',     icon:'🐱', zh:'猫咪',   en:'Cat'     },
+  { id:'dog',     icon:'🐶', zh:'小狗',   en:'Dog'     },
+  { id:'penguin', icon:'🐧', zh:'企鹅',   en:'Penguin' },
+  { id:'fox',     icon:'🦊', zh:'狐狸',   en:'Fox'     },
+  { id:'panda',   icon:'🐼', zh:'熊猫',   en:'Panda'   },
+  { id:'chick',   icon:'🐥', zh:'小鸡',   en:'Chick'   },
+  { id:'rabbit',  icon:'🐰', zh:'兔子',   en:'Rabbit'  },
+  { id:'hamster', icon:'🐹', zh:'仓鼠',   en:'Hamster' },
+  { id:'frog',    icon:'🐸', zh:'青蛙',   en:'Frog'    },
+  { id:'bear',    icon:'🐻', zh:'小熊',   en:'Bear'    },
+];
+// 猫咪的每状态专属表情
+const CAT_FACES = { idle:'😽', working:'😼', decision:'😾', done:'😻', stuck:'🙀', off:'😴' };
+// 状态 → 动画名（宠物）
+const PET_ANIMS = { idle:'', working:'work', decision:'alert', done:'happy', stuck:'shake', off:'sleep' };
+// 状态 → 角标
+const PET_BADGES = { idle:'', working:'⚡', decision:'❗', done:'✅', stuck:'❓', off:'💤' };
+// 光球动画
+const ORB_ANIMS = { decision:'blink', off:'slow', stuck:'slow' };
+
+function renderSkinBar() {
+  const bar = document.getElementById('skinBar');
+  bar.innerHTML = SKINS.map(s => `
+    <button class="skin-btn ${s.id===activeSkin?'on':''}" data-skin="${s.id}" title="${esc(s[LANG])}">
+      ${s.id === 'orb' ? `<span class="mini-orb" style="--c:#6edcff"></span>` : s.icon}
+    </button>`).join('');
+  bar.querySelectorAll('[data-skin]').forEach(b => {
+    b.addEventListener('click', () => {
+      activeSkin = b.dataset.skin;
+      applyVisual();
+    });
+  });
+}
+
+function applyVisual() {
+  const d = DATA[LANG];
+  const st = d.states.find(s => s[0] === activeState) || d.states[1];
+  const c = st[1];
+  const orbStage = document.getElementById('orbStage');
+  const petStage  = document.getElementById('petStage');
+  const orb = document.getElementById('orb');
+  const pet = document.getElementById('pet');
+
+  if (activeSkin === 'orb') {
+    orbStage.style.display = 'flex';
+    petStage.style.display = 'none';
+    orb.style.setProperty('--c', c);
+    orb.dataset.anim = ORB_ANIMS[activeState] || '';
+  } else {
+    orbStage.style.display = 'none';
+    petStage.style.display = 'flex';
+    const sk = SKINS.find(s => s.id === activeSkin);
+    pet.style.setProperty('--c', c);
+    pet.dataset.anim = PET_ANIMS[activeState] || '';
+    // 猫咪用专属表情，其他宠物用本体 emoji
+    const face = (activeSkin === 'cat' && CAT_FACES[activeState]) ? CAT_FACES[activeState] : sk.icon;
+    pet.childNodes[0].nodeValue = face;
+    document.getElementById('petBadge').textContent = PET_BADGES[activeState] || '';
+  }
+  // 皮肤名 + 高亮
+  const sk = SKINS.find(s => s.id === activeSkin);
+  document.getElementById('skinName').textContent = `${LANG==='zh'?'皮肤':'Skin'}: ${sk[LANG]}`;
+  document.querySelectorAll('[data-skin]').forEach(b => b.classList.toggle('on', b.dataset.skin === activeSkin));
+}
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function render() {
+  const d = DATA[LANG];
+  document.documentElement.lang = LANG;
+  $('#langBtn').textContent = LANG === 'zh' ? 'EN' : '中';
+
+  // 文本词条
+  document.querySelectorAll('[data-i]').forEach(el => {
+    const v = d[el.dataset.i];
+    if (v === undefined) return;
+    if (/<[a-z]/i.test(v)) el.innerHTML = v; else el.textContent = v;
+  });
+
+  // 状态列表
+  $('#stateList').innerHTML = d.states.map(([id, c, name, meta]) => `
+    <div class="state-row ${id===activeState?'on':''}" data-state="${id}" data-c="${c}">
+      <span class="sd" style="background:${c};color:${c}"></span>
+      <span class="sn">${esc(name)}</span>
+      <span class="sm">${esc(meta)}</span>
+    </div>`).join('');
+  document.querySelectorAll('.state-row').forEach(r => {
+    r.addEventListener('click', () => {
+      activeState = r.dataset.state;
+      applyVisual();
+      document.querySelectorAll('.state-row').forEach(x => x.classList.toggle('on', x === r));
+    });
+  });
+  renderSkinBar();
+  applyVisual();
+
+  // 特性
+  $('#featGrid').innerHTML = d.feats.map(([ic, h, p]) => `
+    <div class="card"><span class="ic">${ic}</span><h3>${esc(h)}</h3><p>${esc(p)}</p></div>`).join('');
+
+  // 工具（真实 logo SVG）
+  const TOOL_SVGS = {
+    codebuddy: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="14" rx="3" stroke="#4ec9b0" stroke-width="1.8"/><circle cx="9" cy="11" r="1.3" fill="#4ec9b0"/><circle cx="12.5" cy="11" r="1.3" fill="#4ec9b0"/><circle cx="16" cy="11" r="1.3" fill="#4ec9b0"/></svg>',
+    workbuddy:  '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="12" rx="3" stroke="#60a5fa" stroke-width="1.8"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7" stroke="#60a5fa" stroke-width="1.8"/><path d="M3 12h18" stroke="#60a5fa" stroke-width="1.8"/></svg>',
+    trae:       '<svg viewBox="0 0 24 24" fill="none"><path d="M13 2 5 13.5h5.5L9.5 22 19 9.5h-6L13 2Z" fill="#a78bfa"/></svg>',
+    claude:     '<svg viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 5.6L19 10l-5.2 1.4L12 17l-1.8-5.6L5 10l5.2-1.4L12 3Z" fill="#d97757"/><path d="M18.5 14l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6Z" fill="#d97757"/></svg>',
+    codex:      '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#10a37f" stroke-width="1.8"/><path d="M12 7v5l3.5 2" stroke="#10a37f" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    kimi:       '<svg viewBox="0 0 24 24" fill="none"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z" fill="#c7b9ff"/></svg>',
+    cursor:     '<svg viewBox="0 0 24 24" fill="none"><path d="M6 3l12 8.5-5.2 1.2L15 19l-2.8 1.2-2.2-6.3L6 17V3Z" fill="#e8edf7"/></svg>',
+    windsurf:   '<svg viewBox="0 0 24 24" fill="none"><path d="M3 17c4-1 6-4 7-8 1 4 3 7 7 8-4 1-6 4-7 8-1-4-3-7-7-8Z" fill="#34d399"/><path d="M16 4c1.5 1.5 2 3 2 5s-.5 3.5-2 5c1.5-1.5 3-2 5-2s3.5.5 5 2c-1.5-1.5-2-3-2-5s.5-3.5 2-5" fill="none" stroke="#34d399" stroke-width="1.4" transform="translate(-8 -1)"/></svg>',
+    copilot:    '<svg viewBox="0 0 24 24" fill="none"><path d="M9.5 4.5c0-2 1.6-3 2.5-3s2.5 1 2.5 3v2c1.5-1.5 4-1.2 5 .5s.5 4-1 5v6c0 2-1.5 3.5-3.5 3.5h-6C7 21.5 5.5 20 5.5 18v-6c-1.5-1-2-3.3-1-5s3.5-2 5-.5v-2Z" stroke="#e8edf7" stroke-width="1.6"/><circle cx="9.5" cy="11" r="1.2" fill="#e8edf7"/><circle cx="14.5" cy="11" r="1.2" fill="#e8edf7"/></svg>',
+    gemini:     '<svg viewBox="0 0 24 24" fill="none"><path d="M12 2c.5 3.4 2.6 5.5 6 6-3.4.5-5.5 2.6-6 6-.5-3.4-2.6-5.5-6-6 3.4-.5 5.5-2.6 6-6Z" fill="#8b9dc3"/><path d="M19 15c.3 1.8 1.2 2.7 3 3-1.8.3-2.7 1.2-3 3-.3-1.8-1.2-2.7-3-3 1.8-.3 2.7-1.2 3-3Z" fill="#8b9dc3"/></svg>',
+    custom:     '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" fill="#6edcff"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1" stroke="#6edcff" stroke-width="1.7" stroke-linecap="round"/></svg>',
+  };
+  $('#toolList').innerHTML = d.tools.map(([id, n], i) => `
+    <div class="tool">${TOOL_SVGS[id] || '<span class="e">•</span>'}<span class="${i===d.tools.length-1?'plus':''}">${esc(n)}</span></div>`).join('');
+
+  // 占位符表
+  $('#phBody').innerHTML = d.placeholders.map(([a, b, c]) => `
+    <tr><td><code>${esc(a)}</code></td><td>${esc(b)}</td><td><code>${esc(c)}</code></td></tr>`).join('');
+
+  // 下载（真实平台 logo）
+  const APPLE_SVG = '<svg viewBox="0 0 24 24"><path d="M16.36 12.76c-.02-2.13 1.74-3.15 1.82-3.2-.99-1.45-2.53-1.65-3.08-1.67-1.31-.13-2.56.77-3.22.77-.66 0-1.69-.75-2.78-.73-1.43.02-2.75.83-3.49 2.11-1.49 2.58-.38 6.4 1.07 8.5.71 1.02 1.55 2.16 2.66 2.12 1.07-.04 1.47-.69 2.76-.69s1.65.69 2.78.67c1.15-.02 1.87-1.04 2.57-2.06.81-1.18 1.14-2.32 1.16-2.38-.03-.01-2.23-.86-2.25-3.44ZM14.24 6.5c.59-.71.98-1.7.87-2.68-.84.03-1.86.56-2.47 1.27-.54.63-1.02 1.63-.89 2.6.94.07 1.9-.48 2.49-1.19Z" fill="#e8edf7"/></svg>';
+  const WIN_SVG = '<svg viewBox="0 0 24 24"><path d="M3 5.5 10.5 4.4v7.1H3V5.5Zm0 13 7.5 1.1v-7H3v5.9Zm8.6 1.3L21 21.5v-8.4h-9.4v6.7Zm0-15.6v6.8H21V3.5l-9.4 1.2Z" fill="#e8edf7"/></svg>';
+  const OS_SVGS = { apple: APPLE_SVG, win: WIN_SVG };
+  $('#dlGrid').innerHTML = d.downloads.map(([osId, h, arch, file, cta, rec]) => `
+    <a class="dl" href="${REL}${encodeURIComponent(file)}">
+      ${rec ? `<span class="rec">${LANG==='zh'?'推荐':'Recommended'}</span>` : ''}
+      <div class="os">${OS_SVGS[osId] || ''}</div>
+      <h4>${esc(h)}</h4>
+      <div class="arch">${esc(arch)}</div>
+      <span class="go">${esc(cta)}</span>
+    </a>`).join('');
+
+  // 隐私
+  $('#pvGrid').innerHTML = d.privacy.map(([h, p]) => `
+    <div class="pv"><span class="ck">✓</span><div><h4>${esc(h)}</h4><p>${esc(p)}</p></div></div>`).join('');
+
+  document.title = LANG === 'zh'
+    ? 'JasLight — 通用 AI 工作信号灯'
+    : 'JasLight — Universal AI Work Signal Light';
+}
+
+$('#langBtn').addEventListener('click', () => {
+  LANG = LANG === 'zh' ? 'en' : 'zh';
+  try { localStorage.setItem('jaslight-lang', LANG); } catch(e) {}
+  render();
+});
+
+try {
+  const saved = localStorage.getItem('jaslight-lang');
+  if (saved === 'zh' || saved === 'en') LANG = saved;
+} catch(e) {}
+
+render();
+</script>
+</body>
+</html>
